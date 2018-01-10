@@ -1,0 +1,19 @@
+﻿{
+    "DocumentRoot": ".",
+    "Port": "8080",
+    "Plugins" : [
+        {
+            "Path" : "stat",
+            "Class" : "DNWS.StatPlugin",
+            "Preprocessing" : "true",
+            "Postprocessing" : "false" ,
+            "Singpleton" : "false"
+        },
+        {
+            "Path" : "ox",
+            "Class" : "DNWS.OXPlugin",
+            "Preprocessing" : "false",
+            "Postprocessing" :"false" 
+        }
+    ]
+}
