@@ -7,28 +7,28 @@ namespace DNWS
 {
   public class HTTPRequest
   {
-    protected string _url;
-    protected string _filename;
-    protected static Dictionary<string, string> _propertyListDictionary = null;
-    protected static Dictionary<string, string> _requestListDictionary = null;
+    protected String _url;
+    protected String _filename;
+    protected static Dictionary<String, String> _propertyListDictionary = null;
+    protected static Dictionary<String, String> _requestListDictionary = null;
 
-    protected string _body;
+    protected String _body;
 
     protected int _status;
 
-    protected string _method;
+    protected String _method;
 
-    public string Url
+    public String Url
     {
       get { return _url;}
     }
 
-    public string Filename
+    public String Filename
     {
       get { return _filename;}
     }
 
-    public string Body
+    public String Body
     {
       get {return _body;}
     }
@@ -38,21 +38,21 @@ namespace DNWS
       get {return _status;}
     }
 
-    public string Method
+    public String Method
     {
       get {return _method;}
     }
-    public HTTPRequest(string request)
+    public HTTPRequest(String request)
     {
-      _propertyListDictionary = new Dictionary<string, string>();
-      string[] lines = Regex.Split(request, "\\n");
+      _propertyListDictionary = new Dictionary<String, String>();
+      String[] lines = Regex.Split(request, "\\n");
 
       if(lines.Length == 0) {
         _status = 500;
         return;
       }
 
-      string[] statusLine = Regex.Split(lines[0], "\\s");
+      String[] statusLine = Regex.Split(lines[0], "\\s");
       if(statusLine.Length != 4) { // too short something is wrong
         _status = 401;
         return;
@@ -69,25 +69,25 @@ namespace DNWS
       _status = 200;
 
       _url = statusLine[1];
-      string[] urls = Regex.Split(_url, "/");
+      String[] urls = Regex.Split(_url, "/");
       _filename = urls[urls.Length - 1];
-      string[] parts = Regex.Split(_filename, "[?]");
-      if (parts.Length > 1)
+      String[] parts = Regex.Split(_filename, "[?]");
+      if (parts.Length > 1 && parts[1].Contains('&'))
       {
         //Ref: http://stackoverflow.com/a/4982122
         _requestListDictionary = parts[1].Split('&').Select(x => x.Split('=')).ToDictionary(x => x[0].ToLower(), x => x[1]);
       } else{
-        _requestListDictionary = new Dictionary<string, string>();
+        _requestListDictionary = new Dictionary<String, String>();
       }
 
       if(lines.Length == 1) return;
 
       for(int i = 1; i != lines.Length; i++) {
-        string[] pair = Regex.Split(lines[i], ": "); //FIXME
+        String[] pair = Regex.Split(lines[i], ": "); //FIXME
         if(pair.Length == 0) continue;
         if(pair.Length == 1) { // handle post body
           if(pair[0].Length > 1) { //FIXME, this is a quick hack
-            Dictionary<string, string> _bodys = pair[0].Split('&').Select(x => x.Split('=')).ToDictionary(x => x[0].ToLower(), x => x[1]);
+            Dictionary<String, String> _bodys = pair[0].Split('&').Select(x => x.Split('=')).ToDictionary(x => x[0].ToLower(), x => x[1]);
             _requestListDictionary = _requestListDictionary.Concat(_bodys).ToDictionary(x=>x.Key, x=>x.Value);
           }
         } else { // Length == 2, GET url request
@@ -95,7 +95,7 @@ namespace DNWS
         }
       }
     }
-    public string getPropertyByKey(string key)
+    public String getPropertyByKey(String key)
     {
       if(_propertyListDictionary.ContainsKey(key.ToLower())) {
         return _propertyListDictionary[key.ToLower()];
@@ -103,7 +103,7 @@ namespace DNWS
         return null;
       }
     }
-    public string getRequestByKey(string key)
+    public String getRequestByKey(String key)
     {
       if(_requestListDictionary.ContainsKey(key.ToLower())) {
         return _requestListDictionary[key.ToLower()];
@@ -112,11 +112,11 @@ namespace DNWS
       }
     }
 
-    public void addProperty(string key, string value)
+    public void addProperty(String key, String value)
     {
       _propertyListDictionary[key.ToLower()] = value;
     }
-    public void addRequest(string key, string value)
+    public void addRequest(String key, String value)
     {
       _requestListDictionary[key.ToLower()] = value;
     }

@@ -7,11 +7,17 @@
             "Class" : "DNWS.StatPlugin",
             "Preprocessing" : "true",
             "Postprocessing" : "false" ,
-            "Singpleton" : "false"
+            "Singleton" : "false"
         },
         {
             "Path" : "ox",
             "Class" : "DNWS.OXPlugin",
+            "Preprocessing" : "false",
+            "Postprocessing" :"false" 
+        },
+        {
+            "Path" : "delay",
+            "Class" : "DNWS.DelayPlugin",
             "Preprocessing" : "false",
             "Postprocessing" :"false" 
         }
