@@ -27,7 +27,7 @@ namespace DNWS
             var builder = new ConfigurationBuilder();
             builder.SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("config.json");
             Configuration = builder.Build();
-            DotNetWebServer ws = DotNetWebServer.GetInstance(Convert.ToInt16(Configuration["Port"]), this);
+            DotNetWebServer ws = DotNetWebServer.GetInstance(this);
             ws.Start();
         }
 
@@ -222,21 +222,36 @@ namespace DNWS
         }
     }
 
+    public class TaskInfo
+    {
+        private HTTPProcessor _hp;
+        public HTTPProcessor hp 
+        { 
+            get {return _hp;}
+            set {_hp = value;}
+        }
+        public TaskInfo(HTTPProcessor hp)
+        {
+            this.hp = hp;
+        }
+    }
+
     /// <summary>
     /// Main server class, open the socket and wait for client
     /// </summary>
     public class DotNetWebServer
     {
         protected int _port;
+        protected int _maxThread;
+        protected String _threadModel;
         protected Program _parent;
         protected Socket serverSocket;
         protected Socket clientSocket;
         private static DotNetWebServer _instance = null;
         protected int id;
 
-        private DotNetWebServer(int port, Program parent)
+        private DotNetWebServer(Program parent)
         {
-            _port = port;
             _parent = parent;
             id = 0;
         }
@@ -244,16 +259,21 @@ namespace DNWS
         /// <summary>
         /// Singleton here
         /// </summary>
-        /// <param name="port">Listening port</param>
         /// <param name="parent">parent ref</param>
         /// <returns></returns>
-        public static DotNetWebServer GetInstance(int port, Program parent)
+        public static DotNetWebServer GetInstance(Program parent)
         {
             if (_instance == null)
             {
-                _instance = new DotNetWebServer(port, parent);
+                _instance = new DotNetWebServer(parent);
             }
             return _instance;
+        }
+
+        public void ThreadProc(Object stateinfo)
+        {
+            TaskInfo ti = stateinfo as TaskInfo;
+            ti.hp.Process();
         }
 
         /// <summary>
@@ -265,11 +285,30 @@ namespace DNWS
                 try
                 {
                     // Create listening socket, queue size is 5 now.
+                    _port = Convert.ToInt32(Program.Configuration["Port"]);
                     IPEndPoint localEndPoint = new IPEndPoint(IPAddress.Any, _port);
                     serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                     serverSocket.Bind(localEndPoint);
                     serverSocket.Listen(5);
                     _parent.Log("Server started at port " + _port + ".");
+                    _threadModel = Program.Configuration["ThreadModel"];
+                    _parent.Log("Thread model is " + _threadModel);
+                    if (_threadModel is "Pool") {
+                        _maxThread = Convert.ToInt32(Program.Configuration["ThreadPoolSize"]);
+                        // https://msdn.microsoft.com/en-us/library/system.threading.threadpool.setmaxthreads(v=vs.110).aspx#Remarks
+                        if (_maxThread < Environment.ProcessorCount)
+                        {
+                            _maxThread = Environment.ProcessorCount;
+                        }
+                        int minWorker, minIOC;
+                        ThreadPool.GetMinThreads(out minWorker, out minIOC);
+                        if (_maxThread < minWorker || _maxThread < minIOC)
+                        {
+                            _maxThread = (minWorker < minIOC) ? minIOC : minWorker;
+                        }
+                        ThreadPool.SetMaxThreads(_maxThread, _maxThread);
+                        _parent.Log("Max pool size is " +_maxThread);
+                    }
                     break;
                 }
                 catch (Exception ex)
@@ -279,6 +318,19 @@ namespace DNWS
                 }
                 _port = _port + 1;
             }
+            if (_threadModel is "Single") {
+                MainLoopSingleThread();
+            } else if(_threadModel is "Multi") {
+                MainLoopMultiThread();
+            } else if(_threadModel is "Pool") {
+                MainLoopThreadPool();
+            } else {
+                _parent.Log("Server starting error: unknown thread model\n");
+            }
+        }
+
+        private void MainLoopMultiThread()
+        {
             while (true)
             {
                 try
@@ -288,23 +340,56 @@ namespace DNWS
                     // Get one, show some info
                     _parent.Log("Client accepted:" + clientSocket.RemoteEndPoint.ToString());
                     HTTPProcessor hp = new HTTPProcessor(clientSocket, _parent);
-                    // Single thread
-                    hp.Process();
-                    // End single thread
-                    // Multi thread
                     Thread thread = new Thread(new ThreadStart(hp.Process));
                     id++;
                     thread.Start();
-                    // End multi thread
-
                 }
                 catch (Exception ex)
                 {
                     _parent.Log("Server starting error: " + ex.Message + "\n" + ex.StackTrace);
-
                 }
             }
+        }
 
+        private void MainLoopThreadPool()
+        {
+            while (true)
+            {
+                try
+                {
+                    // Wait for client
+                    clientSocket = serverSocket.Accept();
+                    // Get one, show some info
+                    _parent.Log("Client accepted:" + clientSocket.RemoteEndPoint.ToString());
+                    HTTPProcessor hp = new HTTPProcessor(clientSocket, _parent);
+                    TaskInfo ti = new TaskInfo(hp);
+                    ThreadPool.QueueUserWorkItem(ThreadProc, ti);
+                }
+                catch (Exception ex)
+                {
+                    _parent.Log("Server starting error: " + ex.Message + "\n" + ex.StackTrace);
+                }
+            }
+        }
+
+        private void MainLoopSingleThread()
+        {
+            while (true)
+            {
+                try
+                {
+                    // Wait for client
+                    clientSocket = serverSocket.Accept();
+                    // Get one, show some info
+                    _parent.Log("Client accepted:" + clientSocket.RemoteEndPoint.ToString());
+                    HTTPProcessor hp = new HTTPProcessor(clientSocket, _parent);
+                    hp.Process();
+                }
+                catch (Exception ex)
+                {
+                    _parent.Log("Server starting error: " + ex.Message + "\n" + ex.StackTrace);
+                }
+            }
         }
     }
 }
