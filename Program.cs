@@ -5,6 +5,7 @@ using System.Net.Sockets;
 using System.Net;
 using System.IO;
 using Microsoft.Extensions.Configuration;
+using System.Threading;
 
 namespace DNWS
 {
@@ -289,7 +290,12 @@ namespace DNWS
                     HTTPProcessor hp = new HTTPProcessor(clientSocket, _parent);
                     // Single thread
                     hp.Process();
-                    // End single therad
+                    // End single thread
+                    // Multi thread
+                    Thread thread = new Thread(new ThreadStart(hp.Process));
+                    id++;
+                    thread.Start();
+                    // End multi thread
 
                 }
                 catch (Exception ex)
