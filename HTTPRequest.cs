@@ -78,6 +78,12 @@ namespace DNWS
         _requestListDictionary = parts[1].Split('&').Select(x => x.Split('=')).ToDictionary(x => x[0].ToLower(), x => x[1]);
       } else{
         _requestListDictionary = new Dictionary<String, String>();
+        if (parts.Length > 1) {
+          String[] requestParts = Regex.Split(parts[1], "[=]");
+          if(requestParts.Length > 1) {
+            _requestListDictionary.Add(requestParts[0], requestParts[1]);
+          }
+        }
       }
 
       if(lines.Length == 1) return;
