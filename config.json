@@ -3,7 +3,7 @@
     "Port": "8080",
     "ThreadPoolSize" : "10",
     "AllowThreadModel" : "Pool|Multi|Single",
-    "ThreadModel" : "Pool", 
+    "ThreadModel" : "Single", 
     "Plugins" : [
         {
             "Path" : "stat",
@@ -21,6 +21,12 @@
         {
             "Path" : "delay",
             "Class" : "DNWS.DelayPlugin",
+            "Preprocessing" : "false",
+            "Postprocessing" :"false" 
+        },
+        {
+            "Path" : "twitter",
+            "Class" : "DNWS.TwitterPlugin",
             "Preprocessing" : "false",
             "Postprocessing" :"false" 
         }
