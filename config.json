@@ -3,7 +3,7 @@
     "Port": "8080",
     "ThreadPoolSize" : "10",
     "AllowThreadModel" : "Pool|Multi|Single",
-    "ThreadModel" : "Pool", 
+    "ThreadModel" : "Single", 
     "Plugins" : [
         {
             "Path" : "stat",
@@ -15,6 +15,12 @@
         {
             "Path" : "ox",
             "Class" : "DNWS.OXPlugin",
+            "Preprocessing" : "false",
+            "Postprocessing" :"false" 
+        },
+        {
+            "Path" : "gpu",
+            "Class" : "DNWS.GPUPlugin",
             "Preprocessing" : "false",
             "Postprocessing" :"false" 
         },
