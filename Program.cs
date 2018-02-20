@@ -38,51 +38,109 @@ namespace DNWS
         }
     }
 
+    public class PluginInfo
+    {
+        protected string _path;
+        protected string _type;
+        protected bool _preprocessing;
+        protected bool _postprocessing;
+        protected IPlugin _reference;
+        protected Dictionary<string, string> _parameters;
+
+        public string path
+        {
+            get { return _path;}
+            set {_path = value;}
+        }
+        public string type
+        {
+            get { return _type;}
+            set {_type = value;}
+        }
+        public bool preprocessing
+        {
+            get { return _preprocessing;}
+            set {_preprocessing = value;}
+        }
+        public bool postprocessing
+        {
+            get { return _postprocessing;}
+            set {_postprocessing = value;}
+        }
+        public IPlugin reference
+        {
+            get { return _reference;}
+            set {_reference = value;}
+        }
+
+        public Dictionary<string,string> parameters
+        {
+            get {return _parameters;}
+            set {_parameters = value;}
+        }
+
+    }
+
+    public class PluginManager
+    {
+        private static PluginManager _instance = null;
+        protected Dictionary<string, PluginInfo> plugins = null;
+
+        private PluginManager()
+        {
+
+        }
+
+        /* Singletron
+         */
+        public static PluginManager Instance
+        {
+            get
+            {
+                if (_instance == null) {
+                    _instance = new PluginManager();
+                }
+                return _instance;
+            }
+        }
+
+        public Dictionary<string, PluginInfo> Plugins
+        {
+            get
+            {
+                return plugins;
+            }
+        }
+
+        public void LoadConfiguration(IEnumerable<IConfigurationSection> sections)
+        {
+            if (plugins == null)
+            {
+                plugins = new Dictionary<string, PluginInfo>();
+                foreach (ConfigurationSection section in sections)
+                {
+                    PluginInfo pi = new PluginInfo();
+                    pi.path = section["Path"];
+                    pi.type = section["Class"];
+                    pi.preprocessing = section["Preprocessing"].ToLower().Equals("true");
+                    pi.postprocessing = section["Postprocessing"].ToLower().Equals("true");
+                    pi.reference = (IPlugin)Activator.CreateInstance(Type.GetType(pi.type));
+                    plugins[section["Path"]] = pi;
+                }
+            }
+        }
+    }
     /// <summary>
     /// HTTP processor will process each http request
     /// </summary>
 
     public class HTTPProcessor
     {
-        protected class PluginInfo
-        {
-            protected string _path;
-            protected string _type;
-            protected bool _preprocessing;
-            protected bool _postprocessing;
-            protected IPlugin _reference;
-
-            public string path
-            {
-                get { return _path;}
-                set {_path = value;}
-            }
-            public string type
-            {
-                get { return _type;}
-                set {_type = value;}
-            }
-            public bool preprocessing
-            {
-                get { return _preprocessing;}
-                set {_preprocessing = value;}
-            }
-            public bool postprocessing
-            {
-                get { return _postprocessing;}
-                set {_postprocessing = value;}
-            }
-            public IPlugin reference
-            {
-                get { return _reference;}
-                set {_reference = value;}
-            }
-        }
         // Get config from config manager, e.g., document root and port
         protected string ROOT = Program.Configuration["DocumentRoot"];
         protected Socket _client;
         protected Program _parent;
-        protected Dictionary<string, PluginInfo> plugins;
+        protected PluginManager PM;
 
         /// <summary>
         /// Constructor, set the client socket and parent ref, also init stat hash
@@ -93,18 +151,9 @@ namespace DNWS
         {
             _client = client;
             _parent = parent;
-            plugins = new Dictionary<string, PluginInfo>();
             // load plugins
-            var sections = Program.Configuration.GetSection("Plugins").GetChildren();
-            foreach(ConfigurationSection section in sections) {
-                PluginInfo pi = new PluginInfo();
-                pi.path = section["Path"];
-                pi.type = section["Class"];
-                pi.preprocessing = section["Preprocessing"].ToLower().Equals("true");
-                pi.postprocessing = section["Postprocessing"].ToLower().Equals("true");
-                pi.reference = (IPlugin) Activator.CreateInstance(Type.GetType(pi.type));
-                plugins[section["Path"]] = pi;
-            }
+            PM = PluginManager.Instance;
+            PM.LoadConfiguration(Program.Configuration.GetSection("Plugins").GetChildren());
         }
 
         /// <summary>
@@ -178,13 +227,13 @@ namespace DNWS
             {
                 bool processed = false;
                 // pre processing
-                foreach(KeyValuePair<string, PluginInfo> plugininfo in plugins) {
+                foreach(KeyValuePair<string, PluginInfo> plugininfo in PM.Plugins) {
                     if(plugininfo.Value.preprocessing) {
                         plugininfo.Value.reference.PreProcessing(request);
                     }
                 }
                 // plugins
-                foreach(KeyValuePair<string, PluginInfo> plugininfo in plugins) {
+                foreach(KeyValuePair<string, PluginInfo> plugininfo in PM.Plugins) {
                     if(request.Filename.StartsWith(plugininfo.Key)) {
                         response = plugininfo.Value.reference.GetResponse(request);
                         processed = true;
@@ -202,7 +251,7 @@ namespace DNWS
                     }
                 }
                 // post processing pipe
-                foreach(KeyValuePair<string, PluginInfo> plugininfo in plugins) {
+                foreach(KeyValuePair<string, PluginInfo> plugininfo in PM.Plugins) {
                     if(plugininfo.Value.postprocessing) {
                         response = plugininfo.Value.reference.PostProcessing(response);
                     }
