@@ -22,7 +22,11 @@
             "Path" : "gpu",
             "Class" : "DNWS.GPUPlugin",
             "Preprocessing" : "false",
-            "Postprocessing" :"false" 
+            "Postprocessing" :"false",
+            "Parameters" : {
+                "AllowDeviceType" : "Gpu|Cpu|All|Default|Accelerator",
+                "DeviceType" : "Gpu"
+            }
         },
         {
             "Path" : "delay",

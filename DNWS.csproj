@@ -4,27 +4,8 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.0</TargetFramework>
   </PropertyGroup>
-    <PropertyGroup>
-    <CoreCompileDependsOn>$(CoreCompileDependsOn);Kernel</CoreCompileDependsOn>
-  </PropertyGroup>
   <ItemGroup>
-    <AvailableItemName Include="Kernel"/>
-  </ItemGroup>
-    <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.All" Version="2.0.0" />
     <PackageReference Include="OpenCL.NET" Version="2.2.9.0" />
-  </ItemGroup>
-    <Target Name="Kernel" Inputs="@(Kernel)" Outputs="@(Kernel->'$(IntermediateOutputPath)%(FileName).kernel.cs')">
-    <Kernel InputFiles="@(Kernel)" OutputFiles="@(Kernel->'$(IntermediateOutputPath)%(FileName).kernel.cs')">
-      <Output TaskParameter="OutputFiles" ItemName="KernelWrapper"/>
-    </Kernel>
-  </Target>
-  <ItemGroup>
-    <Compile Include="@(Kernel->'$(IntermediateOutputPath)%(FileName).kernel.cs')">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Compile>
-    <Content Include="@(Kernel)">
-      <CopyToOutputDirectory>%(CopyToOutputDirectory)</CopyToOutputDirectory>
-    </Content>
   </ItemGroup>
 </Project>

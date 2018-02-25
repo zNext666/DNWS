@@ -84,24 +84,28 @@ namespace DNWS
     public class PluginManager
     {
         private static PluginManager _instance = null;
-        protected Dictionary<string, PluginInfo> plugins = null;
+        private Dictionary<string, PluginInfo> plugins = null;
+        private Program _parent;
 
         private PluginManager()
         {
 
         }
 
+        private void SetParent(Program parent)
+        {
+            _parent = parent;
+        }
+
         /* Singletron
          */
-        public static PluginManager Instance
+        public static PluginManager GetInstance(Program parent)
         {
-            get
-            {
-                if (_instance == null) {
-                    _instance = new PluginManager();
-                }
-                return _instance;
+            if (_instance == null) {
+                _instance = new PluginManager();
             }
+            _instance.SetParent(parent);
+            return _instance;
         }
 
         public Dictionary<string, PluginInfo> Plugins
@@ -120,12 +124,29 @@ namespace DNWS
                 foreach (ConfigurationSection section in sections)
                 {
                     PluginInfo pi = new PluginInfo();
+                    Dictionary<string, string> parameters = null;
                     pi.path = section["Path"];
                     pi.type = section["Class"];
                     pi.preprocessing = section["Preprocessing"].ToLower().Equals("true");
                     pi.postprocessing = section["Postprocessing"].ToLower().Equals("true");
-                    pi.reference = (IPlugin)Activator.CreateInstance(Type.GetType(pi.type));
+                    foreach(ConfigurationSection parameter in section.GetSection("Parameters").GetChildren()) {
+                        if (parameters == null) parameters = new Dictionary<string,string>();
+                        parameters[parameter.Key] = parameter.Value;
+                    }
+                    try {
+                        if(parameters != null) {
+                            IPluginWithParameters ip = (IPluginWithParameters)Activator.CreateInstance(Type.GetType(pi.type));
+                            ip.SetParameters(parameters);
+                            pi.reference = (IPlugin) ip;
+                        } else {
+                            pi.reference = (IPlugin)Activator.CreateInstance(Type.GetType(pi.type));
+                        }
+                    } catch (Exception ex) {
+                        _parent.Log("Error loading plugin " + pi.path + " with error " + ex);
+                        continue;
+                    }
                     plugins[section["Path"]] = pi;
+                    _parent.Log("Plugin " + pi.path + " loaded.");
                 }
             }
         }
@@ -152,7 +173,7 @@ namespace DNWS
             _client = client;
             _parent = parent;
             // load plugins
-            PM = PluginManager.Instance;
+            PM = PluginManager.GetInstance(_parent);
             PM.LoadConfiguration(Program.Configuration.GetSection("Plugins").GetChildren());
         }
 
