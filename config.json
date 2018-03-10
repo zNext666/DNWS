@@ -6,6 +6,13 @@
     "ThreadModel" : "Single", 
     "Plugins" : [
         {
+            "Path" : "statapi",
+            "Class" : "DNWS.StatAPIPlugin",
+            "Preprocessing" : "true",
+            "Postprocessing" : "false" ,
+            "Singleton" : "false"
+        },
+        {
             "Path" : "stat",
             "Class" : "DNWS.StatPlugin",
             "Preprocessing" : "true",
