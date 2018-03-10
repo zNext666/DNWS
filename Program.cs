@@ -185,7 +185,7 @@ namespace DNWS
                 }
                 // plugins
                 foreach(KeyValuePair<string, PluginInfo> plugininfo in plugins) {
-                    if(request.Filename.StartsWith(plugininfo.Key)) {
+                    if(request.Filename.Equals(plugininfo.Key)) {
                         response = plugininfo.Value.reference.GetResponse(request);
                         processed = true;
                     }
