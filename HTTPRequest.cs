@@ -61,15 +61,9 @@ namespace DNWS
       }
       if (statusLine[0].ToLower().Equals("get"))
       {
-<<<<<<< HEAD
-        _method = "GET";
-      } else if(statusLine[0].ToLower().Equals("post")) {
-        _method = "POST";
-=======
         _method = METHOD_GET;
       } else if(statusLine[0].ToLower().Equals("post")) {
         _method = METHOD_POST;
->>>>>>> dev-cpe411
       } else {
         _status = 501;
         return;
