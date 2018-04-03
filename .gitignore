@@ -3,5 +3,6 @@ DNWS260.code-workspace
 Dockerfile
 bin/
 obj/
+out/
 Migrations/
 *.db

@@ -63,7 +63,8 @@ namespace DNWS
         response = new HTTPResponse(200);
         response.type = "application/json";
         // Convert response model into json string, then byte array;
-        response.body = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(responseList));
+        string resp = JsonConvert.SerializeObject(responseList);
+        response.body = Encoding.UTF8.GetBytes(resp);
         return response;
       }
       return new HTTPResponse(501);
