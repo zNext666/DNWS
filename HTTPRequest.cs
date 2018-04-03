@@ -7,6 +7,8 @@ namespace DNWS
 {
   public class HTTPRequest
   {
+    public const string METHOD_POST = "POST";
+    public const string METHOD_GET = "GET";
     protected String _url;
     protected String _filename;
     protected static Dictionary<String, String> _propertyListDictionary = null;
@@ -59,9 +61,15 @@ namespace DNWS
       }
       if (statusLine[0].ToLower().Equals("get"))
       {
+<<<<<<< HEAD
         _method = "GET";
       } else if(statusLine[0].ToLower().Equals("post")) {
         _method = "POST";
+=======
+        _method = METHOD_GET;
+      } else if(statusLine[0].ToLower().Equals("post")) {
+        _method = METHOD_POST;
+>>>>>>> dev-cpe411
       } else {
         _status = 501;
         return;

@@ -1,4 +1,4 @@
-﻿{
+{
     "DocumentRoot": ".",
     "Port": "8080",
     "ThreadPoolSize" : "10",
@@ -6,8 +6,8 @@
     "ThreadModel" : "Single", 
     "Plugins" : [
         {
-            "Path" : "statapi",
-            "Class" : "DNWS.StatAPIPlugin",
+            "Path" : "stat",
+            "Class" : "DNWS.StatPlugin",
             "Preprocessing" : "true",
             "Postprocessing" : "false" ,
             "Singleton" : "false"
@@ -19,23 +19,33 @@
             "Postprocessing" : "false" ,
             "Singleton" : "false"
         },
-        /*{
+        {
             "Path" : "ox",
             "Class" : "DNWS.OXPlugin",
             "Preprocessing" : "false",
             "Postprocessing" :"false" 
-        },*/
+        },
+        {
+            "Path" : "gpu",
+            "Class" : "DNWS.GPUPlugin",
+            "Preprocessing" : "false",
+            "Postprocessing" :"false",
+            "Parameters" : {
+                "AllowDeviceType" : "Gpu|Cpu|All|Default|Accelerator",
+                "DeviceType" : "Gpu"
+            }
+        },
         {
             "Path" : "delay",
             "Class" : "DNWS.DelayPlugin",
             "Preprocessing" : "false",
             "Postprocessing" :"false" 
-        }//,
-        /*{
+        },
+        {
             "Path" : "twitter",
             "Class" : "DNWS.TwitterPlugin",
             "Preprocessing" : "false",
             "Postprocessing" :"false" 
-        }*/
+        }
     ]
 }
