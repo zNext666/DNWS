@@ -14,19 +14,19 @@ namespace DNWS
     {
       StringBuilder sb = new StringBuilder();
 
-      string[] client_endpoint = request.getPropertyByKey("RemoteEndPoint").Split(':');
+      string[] client_endpoint = request.GetPropertyByKey("RemoteEndPoint").Split(':');
       string val;
       sb.Append("<html><body>");
       sb.Append("Client Port: ").Append(client_endpoint[1]).Append("<br />\n");
-      if ((val = request.getPropertyByKey("user-agent")) != null)
+      if ((val = request.GetPropertyByKey("user-agent")) != null)
       {
         sb.Append("Browser Information: ").Append(val).Append("<br />\n");
       }
-      if ((val = request.getPropertyByKey("accept-language")) != null)
+      if ((val = request.GetPropertyByKey("accept-language")) != null)
       {
         sb.Append("Accept Language: ").Append(val).Append("<br />\n");
       }
-      if ((val = request.getPropertyByKey("accept-encoding")) != null)
+      if ((val = request.GetPropertyByKey("accept-encoding")) != null)
       {
         sb.Append("Accept Encoding: ").Append(val).Append("<br />\n");
       }

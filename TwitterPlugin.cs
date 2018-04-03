@@ -277,11 +277,11 @@ namespace DNWS
         {
             HTTPResponse response = new HTTPResponse(200);
             StringBuilder sb = new StringBuilder();
-            string user = request.getRequestByKey("user");
-            string password = request.getRequestByKey("password");
-            string action = request.getRequestByKey("action");
-            string following = request.getRequestByKey("following");
-            string message = request.getRequestByKey("message");
+            string user = request.GetRequestByKey("user");
+            string password = request.GetRequestByKey("password");
+            string action = request.GetRequestByKey("action");
+            string following = request.GetRequestByKey("following");
+            string message = request.GetRequestByKey("message");
             if (user == null) // no user? show login screen
             {
                 sb.Append("<h1>Twitter</h1>");

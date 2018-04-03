@@ -238,7 +238,7 @@ namespace DNWS
             } while (ns.DataAvailable);
 
             request = new HTTPRequest(requestStr);
-            request.addProperty("RemoteEndPoint", _client.RemoteEndPoint.ToString());
+            request.AddProperty("RemoteEndPoint", _client.RemoteEndPoint.ToString());
 
             // We can handle only GET now
             if(request.Status != 200) {
