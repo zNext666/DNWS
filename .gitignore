@@ -6,3 +6,5 @@ obj/
 out/
 Migrations/
 *.db
+client/node_modules/
+client/bower_components/

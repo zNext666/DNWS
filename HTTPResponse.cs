@@ -31,6 +31,29 @@ namespace DNWS
             set { _type = value; }
         }
 
+        Dictionary<string, string> _customHeader = new Dictionary<string, string>();
+
+        public Dictionary<string, string> CustomHeader 
+        {
+            get
+            {
+                return _customHeader;
+            } 
+            set
+            {
+                _customHeader = value;
+            }
+        }
+
+        public bool AddCustomHeader(string key, string value)
+        {
+            if(_customHeader.ContainsKey(key)) {
+                return false;
+            }
+            _customHeader.Add(key, value);
+            return true;
+        }
+
         public String header
         {
             get
@@ -40,6 +63,9 @@ namespace DNWS
                 {
                     case 200:
                         headerResponse.Append("200 OK");
+                        break;
+                    case 301:
+                        headerResponse.Append("301 Moved Permanently");
                         break;
                     case 400:
                         headerResponse.Append("400 Bad Request");
@@ -62,6 +88,9 @@ namespace DNWS
                 headerResponse.Append("Content-Type: ").Append(type).Append("\r\n");
                 headerResponse.Append("Connection: close\r\n");
                 headerResponse.Append("Server: DNWS 1.0\r\n");
+                foreach(KeyValuePair<string, string> entry in _customHeader) {
+                    headerResponse.Append(entry.Key).Append(": ").Append(entry.Value).Append("\r\n");
+                }
                 headerResponse.Append("\r\n");
                 return headerResponse.ToString();
             }

@@ -247,6 +247,7 @@ namespace DNWS
             else
             {
                 bool processed = false;
+                string[] requestUrls = request.Url.Split("/");
                 // pre processing
                 foreach(KeyValuePair<string, PluginInfo> plugininfo in PM.Plugins) {
                     if(plugininfo.Value.preprocessing) {
@@ -255,7 +256,8 @@ namespace DNWS
                 }
                 // plugins
                 foreach(KeyValuePair<string, PluginInfo> plugininfo in PM.Plugins) {
-                    if(request.Filename.StartsWith(plugininfo.Key)) {
+                    if(requestUrls[1].Equals(plugininfo.Key, StringComparison.InvariantCultureIgnoreCase)) {
+                    //if(request.Url.StartsWith("/" + plugininfo.Key)) {
                         response = plugininfo.Value.reference.GetResponse(request);
                         processed = true;
                     }
