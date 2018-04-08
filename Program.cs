@@ -247,7 +247,9 @@ namespace DNWS
             else
             {
                 bool processed = false;
+                //FIXME, this seem duplicate with HTTPRequest
                 string[] requestUrls = request.Url.Split("/");
+                string[] paths = requestUrls[1].Split("?");
                 // pre processing
                 foreach(KeyValuePair<string, PluginInfo> plugininfo in PM.Plugins) {
                     if(plugininfo.Value.preprocessing) {
@@ -256,7 +258,7 @@ namespace DNWS
                 }
                 // plugins
                 foreach(KeyValuePair<string, PluginInfo> plugininfo in PM.Plugins) {
-                    if(requestUrls[1].Equals(plugininfo.Key, StringComparison.InvariantCultureIgnoreCase)) {
+                    if(paths[0].Equals(plugininfo.Key, StringComparison.InvariantCultureIgnoreCase)) {
                     //if(request.Url.StartsWith("/" + plugininfo.Key)) {
                         response = plugininfo.Value.reference.GetResponse(request);
                         processed = true;

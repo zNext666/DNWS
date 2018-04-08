@@ -8,18 +8,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace DNWS
 {
-    public class TwitterAPIPlugin : IPlugin
+    public class TwitterAPIPlugin : TwitterPlugin, IPlugin
     {
-        public HTTPResponse PostProcessing(HTTPResponse response)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void PreProcessing(HTTPRequest request)
-        {
-            throw new NotImplementedException();
-        }
-
         private StringBuilder GenTimeline(Twitter twitter, StringBuilder sb)
         {
             sb.Append("Say something<br />");
@@ -99,6 +89,40 @@ namespace DNWS
             if (operators == null) {
                 response.status = 301;
                 response.AddCustomHeader("Location", "/twitterapi/Login");
+            }
+            switch(operators[1].ToLower())
+            {
+                case "login`":
+                    // GET Login -> check login session, if ok, redirect to tweet timeline
+                    if(request.Method == HTTPRequest.METHOD_GET) {
+                        string ruser = request.getPropertyByKey("twitter-user");
+                        if(ruser == null) {
+                            response.status = 403;
+                            return(response);
+                        }
+                        response.status = 301;
+                        response.AddCustomHeader("Location", "/twitterapi/Tweet");
+                    // POST Login -> login
+                    } else if(request.Method == HTTPRequest.METHOD_POST) {
+                        string ruser = request.getPropertyByKey("twitter-user");
+                        string rpwd = request.getPropertyByKey("twitter-password");
+                        if(!Twitter.IsValidUser(ruser, rpwd)) {
+                            response.status = 403;
+                            return(response);
+                        }
+                    }
+                    break;
+                case "logout":
+
+                    break;
+                case "tweet":
+
+                    break;
+                case "user":
+
+                    break;
+                case "follower":
+                    break;
             }
             string user = request.getRequestByKey("user");
             string password = request.getRequestByKey("password");

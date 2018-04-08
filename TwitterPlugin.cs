@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using System.Linq;
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Security.Cryptography;
 
 namespace DNWS
 {
@@ -18,6 +19,7 @@ namespace DNWS
         public int UserId { get; set; }
         public string Name { get; set; }
         public string Password { get; set; }
+        public string Session {get; set;}
         public List<Following> Following { get; set; } // Bug in SQLite implemention in EF7, no FK!
     }
     class Tweet
@@ -54,6 +56,10 @@ namespace DNWS
         public string GetUsername()
         {
             return user.Name;
+        }
+        public String GetSession()
+        {
+            return user.Session;
         }
         public void RemoveFollowing(string followingName)
         {
@@ -189,7 +195,21 @@ namespace DNWS
             }
             return false;
         }
-
+        public static User GetUserFromSession(string session)
+        {
+            using (var context = new TweetContext())
+            {
+                try
+                {
+                    List<User> users = context.Users.Where(b => b.Session.Equals(session)).Include(b => b.Following).ToList();
+                    return users[0];
+                }
+                catch (Exception)
+                {
+                    return null;
+                }
+            }
+        }
         private User GetUser(string name)
         {
             using (var context = new TweetContext())
@@ -205,7 +225,6 @@ namespace DNWS
                 }
             }
         }
-
     }
     public class TwitterPlugin : IPlugin
     {
@@ -224,11 +243,13 @@ namespace DNWS
             sb.Append("Say something<br />");
             sb.Append("<form method=\"post\">");
             sb.Append("<input type=\"text\" name=\"message\"></input>");
+            sb.Append("<input type=\"hidden\" name=\"session\" value=\"").Append(twitter.GetSession()).Append("\" />");
             sb.Append("<input type=\"submit\" name=\"action\" value=\"tweet\" /> <br />");
             sb.Append("</form>");
             sb.Append("Follow someone<br />");
             sb.Append("<form method=\"post\">");
             sb.Append("<input type=\"text\" name=\"following\"></input>");
+            sb.Append("<input type=\"hidden\" name=\"session\" value=\"").Append(twitter.GetSession()).Append("\" />");
             sb.Append("<input type=\"submit\" name=\"action\" value=\"following\" /> <br />");
             sb.Append("</form>");
             sb.Append(String.Format("<h3><b>{0}</b>'s timeline</h3><br />", twitter.GetUsername()));
@@ -258,14 +279,14 @@ namespace DNWS
         {
             sb.Append("<h2>Login</h2>");
             sb.Append("<form method=\"get\">");
-            sb.Append("Username: <input type=\"text\" name=\"user\" value=\"\" /> <br />");
+            sb.Append("Username: <input type=\"text\" name=\"username\" value=\"\" /> <br />");
             sb.Append("Password: <input type=\"password\" name=\"password\" value=\"\" /> <br />");
             sb.Append("<input type=\"submit\" name=\"action\" value=\"login\" /> <br />");
             sb.Append("</form>");
             sb.Append("<br /><br /><br />");
             sb.Append("<h2>New user</h2>");
             sb.Append("<form method=\"get\">");
-            sb.Append("Username: <input type=\"text\" name=\"user\" value=\"\" /> <br />");
+            sb.Append("Username: <input type=\"text\" name=\"username\" value=\"\" /> <br />");
             sb.Append("Password: <input type=\"password\" name=\"password\" value=\"\" /> <br />");
             sb.Append("<input type=\"submit\" name=\"action\" value=\"newuser\" /> <br />");
             sb.Append("</form>");
@@ -277,40 +298,28 @@ namespace DNWS
         {
             HTTPResponse response = new HTTPResponse(200);
             StringBuilder sb = new StringBuilder();
-            string user = request.getRequestByKey("user");
-            string password = request.getRequestByKey("password");
+            string session = request.getRequestByKey("session");
             string action = request.getRequestByKey("action");
+            if(action != null) action = action.ToLower();
+            string username = request.getRequestByKey("username");
+            string password = request.getRequestByKey("password");
             string following = request.getRequestByKey("following");
             string message = request.getRequestByKey("message");
-            if (user == null) // no user? show login screen
+            if (session == null) // no session? show login screen
             {
-                sb.Append("<h1>Twitter</h1>");
-                sb = GenLoginPage(sb);
-            }
-            else
-            {
-                if (action == null) // No action? go to homepage
-                {
-                    try
-                    {
-                        Twitter twitter = new Twitter(user);
-                        sb.Append(String.Format("<h1>{0}'s Twitter</h1>", user));
-                        sb = GenTimeline(twitter, sb);
-                    }
-                    catch (Exception ex)
-                    {
-                        sb.Append(String.Format("Error [{0}], please go back to <a href=\"/twitter\">login page</a> to try again", ex.Message));
-                    }
+                if (action == null) {
+                    sb.Append("<h1>Twitter</h1>");
+                    sb = GenLoginPage(sb);
                 }
                 else
                 {
                     if (action.Equals("newuser"))
                     {
-                        if (user != null && password != null && user != "" && password != "")
+                        if (username != null && password != null && username != "" && password != "")
                         {
                             try
                             {
-                                Twitter.AddUser(user, password);
+                                Twitter.AddUser(username, password);
                                 sb.Append("User added successfully, please go back to <a href=\"/twitter\">login page</a> to login");
                             }
                             catch (Exception ex)
@@ -321,11 +330,42 @@ namespace DNWS
                     }
                     else if (action.Equals("login"))
                     {
-                        if (user != null && password != null && user != "" && password != "")
+                        if (username != null && password != null && username != "" && password != "")
                         {
-                            if (Twitter.IsValidUser(user, password))
+                            if (Twitter.IsValidUser(username, password))
                             {
-                                sb.Append(String.Format("Welcome {0}, please go back to <a href=\"/twitter?user={0}\">tweet page</a> to begin", user));
+                                using (MD5 md5 = MD5.Create())
+                                {
+                                    md5.Initialize();
+                                    md5.ComputeHash(Encoding.UTF8.GetBytes(username + DateTime.Now.ToString()));
+                                    // It's annoying that toString is not working here.
+                                    StringBuilder sbhash = new StringBuilder();
+                                    byte[] hash = md5.Hash;
+                                    for (int i = 0; i < hash.Length; i++)
+                                    {
+                                        sbhash.Append(hash[i].ToString("x2"));
+                                    }
+                                    string newSession = sbhash.ToString();
+                                    //Update session.
+                                    using (var context = new TweetContext())
+                                    {
+                                        try
+                                        {
+                                            List<User> users = context.Users.Where(b => b.Name.Equals(username)).ToList();
+                                            User aUser = users[0];
+                                            aUser.Session = newSession;
+                                            context.Users.Update(aUser);
+                                            context.SaveChanges();
+                                        }
+                                        catch (Exception)
+                                        {
+                                            return null;
+                                        }
+                                    }
+                                    response.status = 301;
+                                    response.AddCustomHeader("Location", "/twitter?session=" + newSession);
+                                    return response;
+                                }
                             }
                             else
                             {
@@ -333,34 +373,52 @@ namespace DNWS
                             }
                         }
                     }
-                    else
+                }
+            }
+            else // session is not null
+            {
+                User user = Twitter.GetUserFromSession(session);
+                if(user == null) {
+                    response.status = 404;
+                    return response;
+                }
+                Twitter twitter = new Twitter(user.Name);
+                if (action == null) // No action? go to homepage
+                {
+                    try
                     {
-                        Twitter twitter = new Twitter(user);
-                        sb.Append(String.Format("<h1>{0}'s Twitter</h1>", user));
-                        if (action.Equals("following"))
+                        sb.Append(String.Format("<h1>{0}'s Twitter</h1>", user.Name));
+                        sb = GenTimeline(twitter, sb);
+                    }
+                    catch (Exception ex)
+                    {
+                        sb.Append(String.Format("Error [{0}], please go back to <a href=\"/twitter\">login page</a> to try again", ex.Message));
+                    }
+                } else { //action is not null
+                    sb.Append(String.Format("<h1>{0}'s Twitter</h1>", user.Name));
+                    if (action.Equals("following"))
+                    {
+                        try
                         {
-                            try
-                            {
-                                twitter.AddFollowing(following);
-                                sb = GenTimeline(twitter, sb);
-                            }
-                            catch (Exception ex)
-                            {
-                                sb.Append(String.Format("Error [{0}], please go back to <a href=\"/twitter\">login page</a> to try again", ex.Message));
-                            }
+                            twitter.AddFollowing(following);
+                            sb = GenTimeline(twitter, sb);
                         }
-                        else if (action.Equals("tweet"))
+                        catch (Exception ex)
                         {
-                            try
-                            {
-                                twitter.PostTweet(message);
-                                sb = GenTimeline(twitter, sb);
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine(ex.ToString());
-                                sb.Append(String.Format("Error [{0}], please go back to <a href=\"/twitter\">login page</a> to try again", ex.Message));
-                            }
+                            sb.Append(String.Format("Error [{0}], please go back to <a href=\"/twitter\">login page</a> to try again", ex.Message));
+                        }
+                    }
+                    else if (action.Equals("tweet"))
+                    {
+                        try
+                        {
+                            twitter.PostTweet(message);
+                            sb = GenTimeline(twitter, sb);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine(ex.ToString());
+                            sb.Append(String.Format("Error [{0}], please go back to <a href=\"/twitter\">login page</a> to try again", ex.Message));
                         }
                     }
                 }

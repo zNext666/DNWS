@@ -11,8 +11,8 @@ namespace DNWS
     public const string METHOD_GET = "GET";
     protected String _url;
     protected String _filename;
-    protected static Dictionary<String, String> _propertyListDictionary = null;
-    protected static Dictionary<String, String> _requestListDictionary = null;
+    protected Dictionary<String, String> _propertyListDictionary = null;
+    protected Dictionary<String, String> _requestListDictionary = null;
 
     protected String _body;
 
@@ -96,7 +96,12 @@ namespace DNWS
         if(pair.Length == 1) { // handle post body
           if(pair[0].Length > 1) { //FIXME, this is a quick hack
             Dictionary<String, String> _bodys = pair[0].Split('&').Select(x => x.Split('=')).ToDictionary(x => x[0].ToLower(), x => x[1]);
-            _requestListDictionary = _requestListDictionary.Concat(_bodys).ToDictionary(x=>x.Key, x=>x.Value);
+            foreach(KeyValuePair<string, string> entry in _bodys) {
+              if(!_requestListDictionary.ContainsKey(entry.Key)) {
+                _requestListDictionary.Add(entry.Key, entry.Value);
+              }
+            }
+            //_requestListDictionary = _requestListDictionary.Concat(_bodys).ToDictionary(x=>x.Key, x=>x.Value);
           }
         } else { // Length == 2, GET url request
           addProperty(pair[0], pair[1]);
