@@ -9,6 +9,7 @@ namespace DNWS
   {
     public const string METHOD_POST = "POST";
     public const string METHOD_GET = "GET";
+    public const string METHOD_DELETE = "DELETE";
     protected String _url;
     protected String _filename;
     protected Dictionary<String, String> _propertyListDictionary = null;
@@ -64,6 +65,8 @@ namespace DNWS
         _method = METHOD_GET;
       } else if(statusLine[0].ToLower().Equals("post")) {
         _method = METHOD_POST;
+      } else if(statusLine[0].ToLower().Equals("delet")) {
+        _method = METHOD_DELETE;
       } else {
         _status = 501;
         return;
@@ -83,7 +86,7 @@ namespace DNWS
         if (parts.Length > 1) {
           String[] requestParts = Regex.Split(parts[1], "[=]");
           if(requestParts.Length > 1) {
-            _requestListDictionary.Add(requestParts[0], requestParts[1]);
+            AddRequest(requestParts[0], requestParts[1]);
           }
         }
       }
@@ -98,17 +101,16 @@ namespace DNWS
             Dictionary<String, String> _bodys = pair[0].Split('&').Select(x => x.Split('=')).ToDictionary(x => x[0].ToLower(), x => x[1]);
             foreach(KeyValuePair<string, string> entry in _bodys) {
               if(!_requestListDictionary.ContainsKey(entry.Key)) {
-                _requestListDictionary.Add(entry.Key, entry.Value);
+                AddRequest(entry.Key, entry.Value);
               }
             }
-            //_requestListDictionary = _requestListDictionary.Concat(_bodys).ToDictionary(x=>x.Key, x=>x.Value);
           }
         } else { // Length == 2, GET url request
-          addProperty(pair[0], pair[1]);
+          AddProperty(pair[0], pair[1]);
         }
       }
     }
-    public String getPropertyByKey(String key)
+    public String GetPropertyByKey(String key)
     {
       if(_propertyListDictionary.ContainsKey(key.ToLower())) {
         return _propertyListDictionary[key.ToLower()];
@@ -116,7 +118,7 @@ namespace DNWS
         return null;
       }
     }
-    public String getRequestByKey(String key)
+    public String GetRequestByKey(String key)
     {
       if(_requestListDictionary.ContainsKey(key.ToLower())) {
         return _requestListDictionary[key.ToLower()];
@@ -125,13 +127,13 @@ namespace DNWS
       }
     }
 
-    public void addProperty(String key, String value)
+    public void AddProperty(String key, String value)
     {
-      _propertyListDictionary[key.ToLower()] = value;
+      _propertyListDictionary.Add(key.ToLower(), value.TrimEnd('\r', '\n'));
     }
-    public void addRequest(String key, String value)
+    public void AddRequest(String key, String value)
     {
-      _requestListDictionary[key.ToLower()] = value;
+      _requestListDictionary.Add(key.ToLower(), value.TrimEnd('\r', '\n'));
     }
   }
 }

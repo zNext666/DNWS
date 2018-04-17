@@ -97,12 +97,13 @@ namespace DNWS
                     user.Following = new List<Following>();
                 }
                 List<Following> followings = user.Following.Where(b => b.Name == followingName).ToList();
-                if (followings.Count > 0) return;
-                Following following = new Following();
-                following.Name = followingName;
-                user.Following.Add(following);
-                context.Users.Update(user);
-                context.SaveChanges();
+                if (followings.Count == 0) {
+                    Following following = new Following();
+                    following.Name = followingName;
+                    user.Following.Add(following);
+                    context.Users.Update(user);
+                    context.SaveChanges();
+                } 
             }
         }
         public List<Tweet> GetTimeline(User aUser)
@@ -166,6 +167,7 @@ namespace DNWS
                 context.SaveChanges();
             }
         }
+
         public static void AddUser(string name, string password)
         {
             User user = new User();
@@ -209,6 +211,53 @@ namespace DNWS
                     return null;
                 }
             }
+        }
+
+        public static void RemoveSession(string username)
+        {
+            using (var context = new TweetContext())
+            {
+                List<User> users = context.Users.Where(b => b.Name.Equals(username)).ToList();
+                User aUser = users[0];
+                aUser.Session = null;
+                context.Users.Update(aUser);
+                context.SaveChanges();
+            }
+        }
+        public static string GenSession(string username)
+        {
+            try
+            {
+                using (MD5 md5 = MD5.Create())
+                {
+                    md5.Initialize();
+                    md5.ComputeHash(Encoding.UTF8.GetBytes(username + DateTime.Now.ToString()));
+                    // It's annoying that toString is not working here.
+                    StringBuilder sbhash = new StringBuilder();
+                    byte[] hash = md5.Hash;
+                    for (int i = 0; i < hash.Length; i++)
+                    {
+                        sbhash.Append(hash[i].ToString("x2"));
+                    }
+                    string newSession = sbhash.ToString();
+                    //Update session.
+                    using (var context = new TweetContext())
+                    {
+                        List<User> users = context.Users.Where(b => b.Name.Equals(username)).ToList();
+                        User aUser = users[0];
+                        aUser.Session = newSession;
+                        context.Users.Update(aUser);
+                        context.SaveChanges();
+                    }
+                    return newSession;
+                }
+
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+
         }
         private User GetUser(string name)
         {
@@ -298,13 +347,13 @@ namespace DNWS
         {
             HTTPResponse response = new HTTPResponse(200);
             StringBuilder sb = new StringBuilder();
-            string session = request.getRequestByKey("session");
-            string action = request.getRequestByKey("action");
+            string session = request.GetRequestByKey("session");
+            string action = request.GetRequestByKey("action").ToLower();
             if(action != null) action = action.ToLower();
-            string username = request.getRequestByKey("username");
-            string password = request.getRequestByKey("password");
-            string following = request.getRequestByKey("following");
-            string message = request.getRequestByKey("message");
+            string username = request.GetRequestByKey("username");
+            string password = request.GetRequestByKey("password");
+            string following = request.GetRequestByKey("following");
+            string message = request.GetRequestByKey("message");
             if (session == null) // no session? show login screen
             {
                 if (action == null) {
@@ -334,38 +383,14 @@ namespace DNWS
                         {
                             if (Twitter.IsValidUser(username, password))
                             {
-                                using (MD5 md5 = MD5.Create())
-                                {
-                                    md5.Initialize();
-                                    md5.ComputeHash(Encoding.UTF8.GetBytes(username + DateTime.Now.ToString()));
-                                    // It's annoying that toString is not working here.
-                                    StringBuilder sbhash = new StringBuilder();
-                                    byte[] hash = md5.Hash;
-                                    for (int i = 0; i < hash.Length; i++)
-                                    {
-                                        sbhash.Append(hash[i].ToString("x2"));
-                                    }
-                                    string newSession = sbhash.ToString();
-                                    //Update session.
-                                    using (var context = new TweetContext())
-                                    {
-                                        try
-                                        {
-                                            List<User> users = context.Users.Where(b => b.Name.Equals(username)).ToList();
-                                            User aUser = users[0];
-                                            aUser.Session = newSession;
-                                            context.Users.Update(aUser);
-                                            context.SaveChanges();
-                                        }
-                                        catch (Exception)
-                                        {
-                                            return null;
-                                        }
-                                    }
-                                    response.status = 301;
+                                string newSession = Twitter.GenSession(username);
+                                if(newSession != null) {
+                                    response.Status = 301;
                                     response.AddCustomHeader("Location", "/twitter?session=" + newSession);
                                     return response;
                                 }
+                                response.Status = 500;
+                                return response;
                             }
                             else
                             {
@@ -379,7 +404,7 @@ namespace DNWS
             {
                 User user = Twitter.GetUserFromSession(session);
                 if(user == null) {
-                    response.status = 404;
+                    response.Status = 404;
                     return response;
                 }
                 Twitter twitter = new Twitter(user.Name);
@@ -423,7 +448,7 @@ namespace DNWS
                     }
                 }
             }
-            response.body = Encoding.UTF8.GetBytes(sb.ToString());
+            response.Body = Encoding.UTF8.GetBytes(sb.ToString());
             return response;
         }
     }

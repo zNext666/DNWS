@@ -120,11 +120,11 @@ namespace DNWS
         sb.Append("<html><body>");
         sb.Append(GenUploadForm());
         sb.Append("</body></html>");
-        response.body = Encoding.UTF8.GetBytes(sb.ToString());
+        response.Body = Encoding.UTF8.GetBytes(sb.ToString());
         return response;
       } else if (request.Method == HTTPRequest.METHOD_POST) {
         sb.Append(request.Body);
-        response.body = Encoding.UTF8.GetBytes(sb.ToString());
+        response.Body = Encoding.UTF8.GetBytes(sb.ToString());
         string programPath = System.Environment.CurrentDirectory +  "/Kernel.cl";
         if(!System.IO.File.Exists(programPath)) {
           Console.WriteLine("Program doesn't exist at path " + programPath);
@@ -181,7 +181,7 @@ namespace DNWS
           sb.Append("</pre>");
         }  
         sb.Append("</body></html>");
-        response.body = Encoding.UTF8.GetBytes(sb.ToString());
+        response.Body = Encoding.UTF8.GetBytes(sb.ToString());
         return response;
       }
       return new HTTPResponse(501);

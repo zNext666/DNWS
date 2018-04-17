@@ -5,216 +5,306 @@ using System.Text.RegularExpressions;
 using System.Linq;
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace DNWS
 {
     public class TwitterAPIPlugin : TwitterPlugin, IPlugin
     {
-        private StringBuilder GenTimeline(Twitter twitter, StringBuilder sb)
+        private const string USER_ACTION = "user";
+        private const string TWEET_ACTION = "tweet";
+        private const string LOGIN_ACTION = "login";
+        private const string LOGOUT_ACTION = "logout";
+        private const string FOLLOWING_ACTION = "following";
+        private string session;
+        private string action;
+        private string requestMethod;
+        private const string HTTP_GET = HTTPRequest.METHOD_GET;
+        private const string HTTP_POST = HTTPRequest.METHOD_POST;
+        private const string HTTP_DELETE = HTTPRequest.METHOD_DELETE;
+
+        protected bool IsAction(string _action)
         {
-            sb.Append("Say something<br />");
-            sb.Append("<form method=\"post\">");
-            sb.Append("<input type=\"text\" name=\"message\"></input>");
-            sb.Append("<input type=\"submit\" name=\"action\" value=\"tweet\" /> <br />");
-            sb.Append("</form>");
-            sb.Append("Follow someone<br />");
-            sb.Append("<form method=\"post\">");
-            sb.Append("<input type=\"text\" name=\"following\"></input>");
-            sb.Append("<input type=\"submit\" name=\"action\" value=\"following\" /> <br />");
-            sb.Append("</form>");
-            sb.Append(String.Format("<h3><b>{0}</b>'s timeline</h3><br />", twitter.GetUsername()));
-            List<Tweet> tweets = twitter.GetUserTimeline();
-            foreach (Tweet tweet in tweets)
-            {
-                sb.Append("[" + tweet.DateCreated + "]" + tweet.User + ":" + tweet.Message + "<br />");
-            }
-            sb.Append("<br /><br />");
-            sb.Append("<h3>Following timeline</h3><br />");
-            tweets = twitter.GetFollowingTimeline();
-            if (tweets == null)
-            {
-                sb.Append("Your following list is empty, follow someone!");
-            }
-            else
-            {
-                foreach (Tweet tweet in tweets)
-                {
-                    sb.Append("[" + tweet.DateCreated + "] " + tweet.User + ":" + tweet.Message + "<br />");
-                }
-            }
-            return sb;
+            return _action.ToLower().Equals(action.ToLower());
         }
-
-        protected StringBuilder GenLoginPage(StringBuilder sb)
+        protected bool IsMethod(string _method)
         {
-            sb.Append("<h2>Login</h2>");
-            sb.Append("<form method=\"get\">");
-            sb.Append("Username: <input type=\"text\" name=\"user\" value=\"\" /> <br />");
-            sb.Append("Password: <input type=\"password\" name=\"password\" value=\"\" /> <br />");
-            sb.Append("<input type=\"submit\" name=\"action\" value=\"login\" /> <br />");
-            sb.Append("</form>");
-            sb.Append("<br /><br /><br />");
-            sb.Append("<h2>New user</h2>");
-            sb.Append("<form method=\"get\">");
-            sb.Append("Username: <input type=\"text\" name=\"user\" value=\"\" /> <br />");
-            sb.Append("Password: <input type=\"password\" name=\"password\" value=\"\" /> <br />");
-            sb.Append("<input type=\"submit\" name=\"action\" value=\"newuser\" /> <br />");
-            sb.Append("</form>");
-            return sb;
+            return requestMethod.ToLower().Equals(_method.ToLower());
         }
-
-
-        public HTTPResponse GetResponse(HTTPRequest request)
+        protected Func<string, bool> IsNOE = String.IsNullOrEmpty;
+        public new HTTPResponse GetResponse(HTTPRequest request)
         {
             HTTPResponse response = new HTTPResponse(200);
             StringBuilder sb = new StringBuilder();
-
-            string[] urls = request.Url.Split("/");
-            string[] operators = null;
-            if(urls.Length > 2) {
-                operators = new string[urls.Length - 2];
-                Array.Copy(urls, 2, operators, 0, urls.Length - 2);
-                // Remove trailing slash
-                if(operators[operators.Length - 1] == "") {
-                    if(operators.Length == 1) {
-                        operators = null;
-                    } else {
-                        List<string> foos = new List<string>(operators);
-                        foos.RemoveAt(foos.Count - 1);
-                        operators = foos.ToArray();
-                    }
-                }
-            }
-
-            if (operators == null) {
-                response.status = 301;
-                response.AddCustomHeader("Location", "/twitterapi/Login");
-            }
-            switch(operators[1].ToLower())
+            session = request.GetPropertyByKey("session");
+            string[] urlToken = request.Url.Split("/");
+            if (urlToken.Length > 2)
             {
-                case "login`":
-                    // GET Login -> check login session, if ok, redirect to tweet timeline
-                    if(request.Method == HTTPRequest.METHOD_GET) {
-                        string ruser = request.getPropertyByKey("twitter-user");
-                        if(ruser == null) {
-                            response.status = 403;
-                            return(response);
-                        }
-                        response.status = 301;
-                        response.AddCustomHeader("Location", "/twitterapi/Tweet");
-                    // POST Login -> login
-                    } else if(request.Method == HTTPRequest.METHOD_POST) {
-                        string ruser = request.getPropertyByKey("twitter-user");
-                        string rpwd = request.getPropertyByKey("twitter-password");
-                        if(!Twitter.IsValidUser(ruser, rpwd)) {
-                            response.status = 403;
-                            return(response);
-                        }
-                    }
-                    break;
-                case "logout":
-
-                    break;
-                case "tweet":
-
-                    break;
-                case "user":
-
-                    break;
-                case "follower":
-                    break;
-            }
-            string user = request.getRequestByKey("user");
-            string password = request.getRequestByKey("password");
-            string action = request.getRequestByKey("action");
-            string following = request.getRequestByKey("following");
-            string message = request.getRequestByKey("message");
-
-
-            if (user == null) // no user? show login screen
-            {
-                sb.Append("<h1>Twitter</h1>");
-                sb = GenLoginPage(sb);
+                action = urlToken[2];
             }
             else
             {
-                if (action == null) // No action? go to homepage
+                action = null;
+            }
+            requestMethod = request.Method;
+            string username = request.GetRequestByKey("username");
+            string password = request.GetRequestByKey("password");
+
+            if (IsAction(USER_ACTION))
+            {
+                if (IsMethod(HTTP_POST))
                 {
-                    try
+                    if (!IsNOE(username) && !IsNOE(password))
                     {
-                        Twitter twitter = new Twitter(user);
-                        sb.Append(String.Format("<h1>{0}'s Twitter</h1>", user));
-                        sb = GenTimeline(twitter, sb);
-                    }
-                    catch (Exception ex)
-                    {
-                        sb.Append(String.Format("Error [{0}], please go back to <a href=\"/twitter\">login page</a> to try again", ex.Message));
-                    }
-                }
-                else
-                {
-                    if (action.Equals("newuser"))
-                    {
-                        if (user != null && password != null && user != "" && password != "")
+                        try
                         {
-                            try
-                            {
-                                Twitter.AddUser(user, password);
-                                sb.Append("User added successfully, please go back to <a href=\"/twitter\">login page</a> to login");
-                            }
-                            catch (Exception ex)
-                            {
-                                sb.Append(String.Format("Error adding user with error [{0}], please go back to <a href=\"/twitter\">login page</a> to try again", ex.Message));
-                            }
+                            Twitter.AddUser(username, password);
+                            response.Status = 201;
                         }
-                    }
-                    else if (action.Equals("login"))
-                    {
-                        if (user != null && password != null && user != "" && password != "")
+                        catch (Exception ex)
                         {
-                            if (Twitter.IsValidUser(user, password))
-                            {
-                                sb.Append(String.Format("Welcome {0}, please go back to <a href=\"/twitter?user={0}\">tweet page</a> to begin", user));
-                            }
-                            else
-                            {
-                                sb.Append("Error login, please go back to <a href=\"/twitter\">login page</a> to try again");
-                            }
+                            response.SetBody(ex.Message);
+                            response.Status = 500;
                         }
                     }
                     else
                     {
-                        Twitter twitter = new Twitter(user);
-                        sb.Append(String.Format("<h1>{0}'s Twitter</h1>", user));
-                        if (action.Equals("following"))
+                        response.SetBody("Username and password required");
+                        response.Status = 400;
+                        return response;
+                    }
+                }
+            }
+            else if (IsAction(LOGIN_ACTION))
+            {
+                if (IsMethod(HTTP_POST))
+                {
+                    if (!IsNOE(username) && !IsNOE(password))
+                    {
+                        if (Twitter.IsValidUser(username, password))
                         {
-                            try
+                            string newSession = Twitter.GenSession(username);
+                            if (!IsNOE(newSession))
                             {
-                                twitter.AddFollowing(following);
-                                sb = GenTimeline(twitter, sb);
+                                response.Status = 201;
+                                dynamic jobj = new JObject();
+                                jobj.Session = newSession;
+                                response.Type = "application/json";
+                                string resp = JsonConvert.SerializeObject(jobj);
+                                response.Body = Encoding.UTF8.GetBytes(resp);
+                                return response;
                             }
-                            catch (Exception ex)
-                            {
-                                sb.Append(String.Format("Error [{0}], please go back to <a href=\"/twitter\">login page</a> to try again", ex.Message));
-                            }
+                            response.SetBody("Can't create session");
+                            response.Status = 500;
+                            return response;
                         }
-                        else if (action.Equals("tweet"))
+                        else
                         {
-                            try
+                            response.SetBody("Invalid username/password");
+                            response.Status = 404;
+                            return response;
+                        }
+                    }
+                    else
+                    {
+                        response.SetBody("Username and password required");
+                        response.Status = 400;
+                        return response;
+                    }
+
+                }
+            }
+            else if (!IsNOE(session))
+            {
+                User user = Twitter.GetUserFromSession(session);
+                if (user == null)
+                {
+                    response.SetBody("User not found, please login again");
+                    response.Status = 404;
+                    return response;
+                }
+                Twitter twitter = new Twitter(user.Name);
+                if (IsNOE(action))
+                {
+                    if (IsMethod(HTTP_GET))
+                    {
+                        try
+                        {
+                            response = new HTTPResponse(200);
+                            response.Type = "application/json";
+                            string resp = JsonConvert.SerializeObject(twitter.GetFollowingTimeline());
+                            if (IsNOE(resp))
                             {
-                                twitter.PostTweet(message);
-                                sb = GenTimeline(twitter, sb);
+                                response.SetBody("No post in timline");
+                                response.Status = 404;
+                                return response;
                             }
-                            catch (Exception ex)
+                            response.Body = Encoding.UTF8.GetBytes(resp);
+                            return response;
+                        }
+                        catch (Exception ex)
+                        {
+                            response.SetBody(ex.Message);
+                            response.Status = 500;
+                            return response;
+                        }
+                    }
+                }
+                else if (IsAction(LOGOUT_ACTION)) 
+                {
+                    if (IsMethod(HTTP_POST))
+                    {
+                        try {
+                            Twitter.RemoveSession(user.Name);
+                            response.Status = 200;
+                            return response;
+                        }
+                        catch (Exception ex)
+                        {
+                            response.SetBody(ex.Message);
+                            response.Status = 500;
+                            return response;
+                        }
+                    }
+                }
+                else if (IsAction(TWEET_ACTION))
+                {
+                    if (IsMethod(HTTP_GET))
+                    {
+                        try
+                        {
+                            response = new HTTPResponse(200);
+                            response.Type = "application/json";
+                            string resp = JsonConvert.SerializeObject(twitter.GetTimeline(user));
+                            if (IsNOE(resp))
                             {
-                                Console.WriteLine(ex.ToString());
-                                sb.Append(String.Format("Error [{0}], please go back to <a href=\"/twitter\">login page</a> to try again", ex.Message));
+                                response.SetBody("No post in timline");
+                                response.Status = 404;
+                                return response;
                             }
+                            response.Body = Encoding.UTF8.GetBytes(resp);
+                            return response;
+                        }
+                        catch (Exception ex)
+                        {
+                            response.SetBody(ex.Message);
+                            response.Status = 500;
+                            return response;
+                        }
+                    }
+                    else if (IsMethod(HTTP_POST))
+                    {
+                        try
+                        {
+                            string message = request.GetRequestByKey("message");
+                            if (IsNOE(message)) {
+                                response.SetBody("Message required");
+                                response.Status = 400;
+                                return response;
+                            }
+                            Tweet tweet = new Tweet();
+                            tweet.User = user.Name;
+                            tweet.Message = message;
+                            tweet.DateCreated = DateTime.Now;
+                            using (var context = new TweetContext())
+                            {
+                                context.Tweets.Add(tweet);
+                                context.SaveChanges();
+                            }
+                            response.Status = 201;
+                            return response;
+                        }
+                        catch (Exception ex)
+                        {
+                            response.SetBody(ex.Message);
+                            response.Status = 500;
+                            return response;
+                        }
+
+                    }
+                    else if (IsMethod(HTTP_DELETE))
+                    {
+                        try {
+                            throw (new NotImplementedException());
+                        } catch (Exception ex) {
+                            response.SetBody(ex.Message);
+                            response.Status = 501;
+                            return response;
+                        }
+                    }
+                }
+                else if (IsAction(FOLLOWING_ACTION))
+                {
+                    if (IsMethod(HTTP_GET))
+                    {
+                        response = new HTTPResponse(200);
+                        response.Type = "application/json";
+                        string resp = JsonConvert.SerializeObject(user.Following);
+                        if (resp == null)
+                        {
+                            response.SetBody("No following");
+                            response.Status = 404;
+                            return response;
+                        }
+                        response.Body = Encoding.UTF8.GetBytes(resp);
+                        return response;
+                    }
+                    else if (IsMethod(HTTP_POST))
+                    {
+                        string following = request.GetRequestByKey("followingname");
+                        try
+                        {
+                            twitter.AddFollowing(following);
+                            response = new HTTPResponse(201);
+                            response.Type = "application/json";
+                            string resp = JsonConvert.SerializeObject(user.Following);
+                            if (resp == null)
+                            {
+                                response.SetBody("No folowing");
+                                response.Status = 404;
+                                return response;
+                            }
+                            response.Body = Encoding.UTF8.GetBytes(resp);
+                            return response;
+                        }
+                        catch (Exception ex)
+                        {
+                            response.Status = 400;
+                            response.SetBody(ex.Message);
+                            return response;
+
+                        }
+                    }
+                    else if (IsMethod(HTTP_DELETE))
+                    {
+                        string following = request.GetRequestByKey("followingname");
+                        try
+                        {
+                            twitter.RemoveFollowing(following);
+                            response = new HTTPResponse(200);
+                            response.Type = "application/json";
+                            string resp = JsonConvert.SerializeObject(user.Following);
+                            if (resp == null)
+                            {
+                                response.SetBody("No following");
+                                response.Status = 404;
+                                return response;
+                            }
+                            response.Body = Encoding.UTF8.GetBytes(resp);
+                            return response;
+                        }
+                        catch (Exception ex)
+                        {
+                            response.Status = 400;
+                            response.SetBody(ex.Message);
+                            return response;
+
                         }
                     }
                 }
             }
-            response.body = Encoding.UTF8.GetBytes(sb.ToString());
+            response.Status = 400;
             return response;
         }
     }

@@ -10,14 +10,14 @@ namespace DNWS
     public class HTTPResponse
     {
         protected int _status = 404;
-        public int status
+        public int Status
         {
             get { return _status; }
             set { _status = value; }
         }
 
         protected byte[] _body;
-        public byte[] body
+        public byte[] Body
         {
             get { return _body; }
             set { _body = value; }
@@ -25,7 +25,7 @@ namespace DNWS
 
 
         protected string _type = "text/html";
-        public string type
+        public string Type
         {
             get { return _type; }
             set { _type = value; }
@@ -53,8 +53,12 @@ namespace DNWS
             _customHeader.Add(key, value);
             return true;
         }
+        public void SetBody(string msg)
+        {
+            Body = Encoding.UTF8.GetBytes(msg);
+        }
 
-        public String header
+        public String Header
         {
             get
             {
@@ -63,6 +67,9 @@ namespace DNWS
                 {
                     case 200:
                         headerResponse.Append("200 OK");
+                        break;
+                    case 201:
+                        headerResponse.Append("201 Created");
                         break;
                     case 301:
                         headerResponse.Append("301 Moved Permanently");
@@ -85,7 +92,7 @@ namespace DNWS
                 }
 
                 headerResponse.Append("\r\n");
-                headerResponse.Append("Content-Type: ").Append(type).Append("\r\n");
+                headerResponse.Append("Content-Type: ").Append(Type).Append("\r\n");
                 headerResponse.Append("Connection: close\r\n");
                 headerResponse.Append("Server: DNWS 1.0\r\n");
                 foreach(KeyValuePair<string, string> entry in _customHeader) {
