@@ -176,7 +176,20 @@ namespace DNWS
                         {
                             response = new HTTPResponse(200);
                             response.Type = "application/json";
-                            string resp = JsonConvert.SerializeObject(twitter.GetTimeline(user));
+                            string resp = null;
+                            if(IsNOE(urlToken[3])) {
+                                resp = JsonConvert.SerializeObject(twitter.GetTimeline(user));
+                            }
+                            else
+                            {
+                                User aUser = Twitter.GetUserFromName(urlToken[3]);
+                                if(aUser == null) {
+                                    response.SetBody("User not found");
+                                    response.Status = 404;
+                                    return response;
+                                }
+                                resp = JsonConvert.SerializeObject(twitter.GetTimeline(aUser));
+                            }
                             if (IsNOE(resp))
                             {
                                 response.SetBody("No post in timline");

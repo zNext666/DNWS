@@ -51,7 +51,7 @@ namespace DNWS
             {
                 throw new Exception("User name is required");
             }
-            user = GetUser(name);
+            user = Twitter.GetUserFromName(name);
         }
         public string GetUsername()
         {
@@ -144,7 +144,7 @@ namespace DNWS
                 }
                 foreach (Following following in followings)
                 {
-                    User followingUser = GetUser(following.Name);
+                    User followingUser = Twitter.GetUserFromName(following.Name);
                     timeline.AddRange(GetTimeline(followingUser));
                 }
             }
@@ -259,7 +259,7 @@ namespace DNWS
             }
 
         }
-        private User GetUser(string name)
+        public static User GetUserFromName(string name)
         {
             using (var context = new TweetContext())
             {

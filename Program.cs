@@ -188,13 +188,21 @@ namespace DNWS
 
             // Guess the content type from file extension
             string fileType = "text/html";
-            if (path.ToLower().EndsWith("jpg") || path.ToLower().EndsWith("jpeg"))
+            if (path.ToLower().EndsWith(".jpg") || path.ToLower().EndsWith(".jpeg"))
             {
                 fileType = "image/jpeg";
             }
-            if (path.ToLower().EndsWith("png"))
+            else if (path.ToLower().EndsWith(".png"))
             {
                 fileType = "image/png";
+            }
+            else if (path.ToLower().EndsWith(".js"))
+            {
+                fileType = "application/javascript";
+            }
+            else if (path.ToLower().EndsWith(".css"))
+            {
+                fileType = "text/css";
             }
 
             // Try to read the file, if not found then 404, otherwise, 500.
@@ -268,11 +276,11 @@ namespace DNWS
                 if(!processed) {
                     if (request.Filename.Equals(""))
                     {
-                        response = getFile(ROOT + "/index.html");
+                        response = getFile(ROOT + "/" + request.Url + "/index.html");
                     }
                     else
                     {
-                        response = getFile(ROOT + "/" + request.Filename);
+                        response = getFile(ROOT + "/" + request.Url);
                     }
                 }
                 // post processing pipe
