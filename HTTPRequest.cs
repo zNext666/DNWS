@@ -10,6 +10,7 @@ namespace DNWS
     public const string METHOD_POST = "POST";
     public const string METHOD_GET = "GET";
     public const string METHOD_DELETE = "DELETE";
+    public const string METHOD_OPTIONS = "OPTIONS";
     protected String _url;
     protected String _filename;
     protected Dictionary<String, String> _propertyListDictionary = null;
@@ -65,8 +66,10 @@ namespace DNWS
         _method = METHOD_GET;
       } else if(statusLine[0].ToLower().Equals("post")) {
         _method = METHOD_POST;
-      } else if(statusLine[0].ToLower().Equals("delet")) {
+      } else if(statusLine[0].ToLower().Equals("delete")) {
         _method = METHOD_DELETE;
+      } else if(statusLine[0].ToLower().Equals("options")) {
+        _method = METHOD_OPTIONS;
       } else {
         _status = 501;
         return;

@@ -13,24 +13,26 @@
   <link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.min.css" />
   <link rel="stylesheet" href="bower_components/html5-boilerplate/dist/css/normalize.css">
   <link rel="stylesheet" href="bower_components/html5-boilerplate/dist/css/main.css">
-  <link rel="stylesheet" href="app/app.css">
+  <link rel="stylesheet" href="app.css">
   <script src="bower_components/html5-boilerplate/dist/js/vendor/modernizr-2.8.3.min.js"></script>
   <script src="bower_components/jquery/dist/jquery.min.js"></script>
   <script src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
   <script src="bower_components/angular/angular.js"></script>
   <script src="bower_components/angular-route/angular-route.js"></script>
-  <script src="app/app.module.js"></script>
-  <script src="app/app.config.js"></script>
-  <script src="app/home/home.js"></script>
+  <script src="app.module.js"></script>
+  <script src="app.config.js"></script>
+  <script src="home/home.js"></script>
+  <script src="tweet/tweet.js"></script>
+  <script src="following/following.js"></script>
 </head>
 <body>
     <div class="container">
         <h3>Twitter</h3>
         <ul class="list-inline">
-          <li><a href="/client/">Home</a></li>
-          <li><a href="/client/tweet/">My Tweets</a></li>
-          <li><a href="/client/following/">My Following</a></li>
-          <li><a href="/client/compose/">Compose</a></li>
+          <li><a href="#!/">Home</a></li>
+          <li><a href="#!/tweet/">My Tweets</a></li>
+          <li><a href="#!/following/">My Following</a></li>
+          <li><a href="#!/compose/">Compose</a></li>
         </ul>
       </div>
   <div ng-view></div>

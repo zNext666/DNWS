@@ -7,4 +7,4 @@ out/
 Migrations/
 *.db
 client/node_modules/
-client/bower_components/
+client/app/bower_components/

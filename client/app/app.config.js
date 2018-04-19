@@ -4,15 +4,18 @@ angular.
   module('twitterApp').
   config(['$locationProvider' ,'$routeProvider',
     function config($locationProvider, $routeProvider) {
-      //$locationProvider.hashPrefix('/client/');
+      $locationProvider.hashPrefix('!');
 
       $routeProvider.
-        when('/', {
-          template: '<following-list></following-list>'
-        }).
         when('/tweet/', {
           template: '<tweet-list></tweet-list>'
         }).
-        otherwise('/client/');
+        when('/following/', {
+          template: '<following-list></following-list>'
+        }).
+        when('/', {
+          template: '<home-list></home-list>'
+        }).
+        otherwise('/');
     }
   ]);

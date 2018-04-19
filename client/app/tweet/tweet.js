@@ -1,14 +1,17 @@
 'use strict';
 
-angular.module('myApp.view2', ['ngRoute'])
+angular.module('tweetList', ['ngRoute'])
+  .component('tweetList', {
+    templateUrl: 'tweet/tweet.html',
+    controller: ['$http', function TweetListController($http) {
+      var self = this;
 
-.config(['$routeProvider', function($routeProvider) {
-  $routeProvider.when('/view2', {
-    templateUrl: 'view2/view2.html',
-    controller: 'View2Ctrl'
-  });
-}])
+      const requestOptions = {
+        headers: {'X-session': '48449768ab25e7427a5ab49df1237b2c'}
+      };
 
-.controller('View2Ctrl', [function() {
-
-}]);
+      $http.get('http://localhost:8080/twitterapi/tweet/', requestOptions).then(function (response) {
+        self.tweets = response.data;
+      });
+    }]
+});

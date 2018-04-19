@@ -95,7 +95,10 @@ namespace DNWS
                 headerResponse.Append("Content-Type: ").Append(Type).Append("\r\n");
                 headerResponse.Append("Connection: close\r\n");
                 headerResponse.Append("Server: DNWS 1.0\r\n");
-                foreach(KeyValuePair<string, string> entry in _customHeader) {
+                headerResponse.Append("Access-Control-Allow-Origin: *\r\n");
+                headerResponse.Append("Access-Control-Allow-Headers: Content-Type, X-session \r\n");
+                headerResponse.Append("Access-Control-Allow-Methods: GET, POST, OPTIONS, DELETE\r\n");
+               foreach(KeyValuePair<string, string> entry in _customHeader) {
                     headerResponse.Append(entry.Key).Append(": ").Append(entry.Value).Append("\r\n");
                 }
                 headerResponse.Append("\r\n");

@@ -23,6 +23,7 @@ namespace DNWS
         private const string HTTP_GET = HTTPRequest.METHOD_GET;
         private const string HTTP_POST = HTTPRequest.METHOD_POST;
         private const string HTTP_DELETE = HTTPRequest.METHOD_DELETE;
+        private const string HTTP_OPTIONS = HTTPRequest.METHOD_OPTIONS;
 
         protected bool IsAction(string _action)
         {
@@ -37,7 +38,7 @@ namespace DNWS
         {
             HTTPResponse response = new HTTPResponse(200);
             StringBuilder sb = new StringBuilder();
-            session = request.GetPropertyByKey("session");
+            session = request.GetPropertyByKey("X-session");
             string[] urlToken = request.Url.Split("/");
             if (urlToken.Length > 2)
             {
@@ -50,6 +51,9 @@ namespace DNWS
             requestMethod = request.Method;
             string username = request.GetRequestByKey("username");
             string password = request.GetRequestByKey("password");
+            if(IsMethod(HTTP_OPTIONS)) {
+                return response;
+            }
 
             if (IsAction(USER_ACTION))
             {
