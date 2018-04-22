@@ -1,0 +1,12 @@
+<div class="container">
+  <h4>Login</h4>
+  <div>
+    <input name="text" ng-model=$ctrl.username ></textarea>
+  </div>
+  <div>
+    <input name="text" ng-model=$ctrl.password ></textarea>
+  </div>
+  <div>
+    <input type="submit" ng-click="$ctrl.sendLogin($ctrl.username, $ctrl.password)"/>
+  </div>
+</div>

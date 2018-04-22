@@ -232,20 +232,21 @@ namespace DNWS
         public void Process()
         {
             NetworkStream ns = new NetworkStream(_client);
-            string requestStr = "";
+            StringBuilder requestStr = new StringBuilder();
             HTTPRequest request = null;
             HTTPResponse response = null;
             byte[] bytes = new byte[1024];
             int bytesRead;
+            
 
             // Read all request
             do
             {
                 bytesRead = ns.Read(bytes, 0, bytes.Length);
-                requestStr += Encoding.UTF8.GetString(bytes, 0, bytesRead);
+                requestStr.Append(Encoding.UTF8.GetString(bytes, 0, bytesRead));
             } while (ns.DataAvailable);
 
-            request = new HTTPRequest(requestStr);
+            request = new HTTPRequest(requestStr.ToString());
             request.AddProperty("RemoteEndPoint", _client.RemoteEndPoint.ToString());
 
             // We can handle only GET now

@@ -3,15 +3,38 @@
 angular.module('homeList', ['ngRoute'])
   .component('homeList', {
     templateUrl: 'home/home.html',
-    controller: ['$http', function FollowingListController($http) {
+    controller: ['$http', '$rootScope', function FollowingListController($http, $rootScope) {
       var self = this;
 
-      const requestOptions = {
-        headers: {'X-session': '48449768ab25e7427a5ab49df1237b2c'}
-      };
+      self.sendTweet = function sendTweet(message) {
+        const requestOptions = {
+          headers: { 'X-session': $rootScope.x_session }
+        };
+        var data ="message=" + encodeURIComponent(message);
+        $http.post('http://localhost:8080/twitterapi/tweet/', data, requestOptions).then(function (response) {
+          $http.get('http://localhost:8080/twitterapi/', requestOptions).then(function (response) {
+            self.tweets = response.data;
+            self.tweets.forEach(function iterator(value, index, collection) {
+              value.Message = decodeURIComponent(value.Message);
+            });
+          });
+        });
+      }
 
-      $http.get('http://localhost:8080/twitterapi/', requestOptions).then(function (response) {
-        self.tweets = response.data;
-      });
+      self.getFollowingTimeline = function getFollowingTimeline() {
+        const requestOptions = {
+          headers: { 'X-session': $rootScope.x_session }
+        };
+
+        $http.get('http://localhost:8080/twitterapi/', requestOptions).then(function (response) {
+          self.tweets = response.data;
+          self.tweets.forEach(function iterator(value, index, collection) {
+            value.Message = decodeURIComponent(value.Message);
+          });
+        });
+      }
+
+      self.getFollowingTimeline();
+
     }]
 });

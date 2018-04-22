@@ -147,6 +147,7 @@ namespace DNWS
                     User followingUser = Twitter.GetUserFromName(following.Name);
                     timeline.AddRange(GetTimeline(followingUser));
                 }
+                timeline.AddRange(GetTimeline(user));
             }
             timeline = timeline.OrderBy(b => b.DateCreated).ToList();
             return timeline;

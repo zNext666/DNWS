@@ -1,8 +1,9 @@
 <div class="container">
-    <h4>User timeline</h4>
+    <h4>My Following</h4>
     <ul class="list-group">
       <li ng-repeat="following in $ctrl.followings" class="list-group-item">
-        <b>{{following.Name}}</b>
+        <b>{{following.Name}}</b> <a href="">[unfollow]</a>
       </li>
     </ul>
+    Add new follow <input type="text" />
   </div>

@@ -6,4 +6,5 @@ angular.module('twitterApp', [
   'homeList',
   'tweetList',
   'followingList',
+  'loginPage',
 ]);
