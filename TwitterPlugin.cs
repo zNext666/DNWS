@@ -29,6 +29,9 @@ namespace DNWS
         public DateTime DateCreated { get; set; }
     }
     // Ref: https://docs.microsoft.com/en-us/ef/core/get-started/netcore/new-db-sqlite
+    // Need to create db before run a program
+    // dotnet ef migrations add InitialCreate
+    // dotnet ef database update
     class TweetContext : DbContext
     {
         public DbSet<Tweet> Tweets { get; set; }

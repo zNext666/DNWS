@@ -3,7 +3,7 @@
     "Port": "8080",
     "ThreadPoolSize" : "10",
     "AllowThreadModel" : "Pool|Multi|Single",
-    "ThreadModel" : "Single", 
+    "ThreadModel" : "Multi", 
     "Plugins" : [
         {
             "Path" : "stat",
@@ -24,11 +24,17 @@
             "Preprocessing" : "false",
             "Postprocessing" :"false" 
         },
-        {
-            "Path" : "twitter",
-            "Class" : "DNWS.TwitterPlugin",
-            "Preprocessing" : "false",
-            "Postprocessing" :"false" 
-        }
+      {
+        "Path": "twitter",
+        "Class": "DNWS.TwitterPlugin",
+        "Preprocessing": "false",
+        "Postprocessing": "false"
+      },
+      {
+        "Path": "twitterAPI",
+        "Class": "DNWS.TwitterAPI",
+        "Preprocessing": "false",
+        "Postprocessing": "false"
+      }
     ]
 }

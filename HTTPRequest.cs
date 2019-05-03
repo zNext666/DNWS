@@ -57,12 +57,15 @@ namespace DNWS
         _status = 401;
         return;
       }
-      if (!statusLine[0].ToLower().Equals("get"))
+      // FIX ERROR and Added DELETE
+      if (statusLine[0].ToLower().Equals("get"))
       {
         _method = "GET";
-      } else if(!statusLine[0].ToLower().Equals("post")) {
+      } else if(statusLine[0].ToLower().Equals("post")) {
         _method = "POST";
-      } else {
+      } else if(statusLine[0].ToLower().Equals("delete")){
+        _method = "DELETE";
+      }else{
         _status = 501;
         return;
       }
@@ -126,5 +129,6 @@ namespace DNWS
     {
       _requestListDictionary[key.ToLower()] = value;
     }
+    
   }
 }
