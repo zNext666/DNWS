@@ -72,8 +72,10 @@ namespace DNWS
       _status = 200;
 
       _url = statusLine[1];
+      
       String[] urls = Regex.Split(_url, "/");
       _filename = urls[urls.Length - 1];
+      //_filename = _url.Substring(1); TRY TO FIX URL
       String[] parts = Regex.Split(_filename, "[?]");
       if (parts.Length > 1 && parts[1].Contains('&'))
       {

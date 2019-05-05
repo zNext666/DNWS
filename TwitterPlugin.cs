@@ -180,6 +180,23 @@ namespace DNWS
             }
         }
 
+        public static void DeleteUser(string name)
+        {
+            using (var context = new TweetContext())
+            {
+                List<User> user = context.Users.Where(u => u.Name.Equals(name)).ToList();
+                if(user.Count < 0){
+                    throw new Exception("User not exists");
+                }
+                List<User> followingList = context.Users.Where(u => true).Include(u => u.Following).ToList();
+                foreach(User follow in followingList){
+                    Twitter t = new Twitter(user[0].ToString());
+                    t.RemoveFollowing(follow.Name);
+                }
+                context.Users.Remove(user[0]);
+                context.SaveChanges();
+            }
+        }
         public static bool IsValidUser(string name, string password)
         {
             using (var context = new TweetContext())

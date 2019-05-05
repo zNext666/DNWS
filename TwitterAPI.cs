@@ -11,43 +11,68 @@ namespace DNWS
 {
     public class TwitterAPI : IPlugin
     {
-        Twitter app = null;
-
+        //get user list
+        private List<User> GetListUser(){
+            // ref TwitterPlugin.cs
+            using (var context = new TweetContext()){
+                try{
+                    List<User> users = context.Users.Where(b => true).Include(b => b.Following).ToList();// using true for all user in db
+                    return users;
+                }catch(Exception){
+                    return null;
+                }
+            }
+        }
         public HTTPResponse PostProcessing(HTTPResponse response)
         {
             throw new NotImplementedException();
         }
-
         public void PreProcessing(HTTPRequest request)
         {
             throw new NotImplementedException();
         }
-        //response normal html
         public HTTPResponse GetResponse(HTTPRequest request)
         {
             HTTPResponse response = null;
             StringBuilder sb = new StringBuilder();
-            /*
-            if(request.Method == "GET"){//GET
-                if(request.Status == 200){  
+            string[] path = request.Filename.Split("?");
+            if(path[0].ToLower() == "user"){
+                if(request.Status == 200){
+                    if(request.Method.ToLower() == "get"){//GET
+                        response = new HTTPResponse(200);
+                        response.type = "json";
+                        response.body = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(GetListUser()).ToString()); //get list user
+                    }else if(request.Method.ToLower() == "post"){//POST
+                        Twitter.AddUser(request.getRequestByKey("user").ToLower(),request.getRequestByKey("password").ToLower());//add user
+                        sb.Append("<html><head><title>TwitterAPI</title></head><body>");
+                        sb.Append("Added User : " + request.getRequestByKey("user").ToLower() + "Complete!");
+                        sb.Append("</body></html");
+                        response = new HTTPResponse(200);
+                        response.body = Encoding.UTF8.GetBytes(sb.ToString());
+                    }else if(request.Method.ToLower() == "delete"){//DELETE
+                        Twitter.DeleteUser(request.getRequestByKey("user"));
+                        sb.Append("<html><head><title>TwitterAPI</title></head><body>");
+                        sb.Append("Delete User : " + request.getRequestByKey("user").ToLower() + "Complete!");
+                        sb.Append("</body></html");
+                        response = new HTTPResponse(200);
+                        response.body = Encoding.UTF8.GetBytes(sb.ToString());
+                    }else{//OTHER ELSE
+                        response = new HTTPResponse(400);
+                    }
                 }else{
-                  response.Status == 400;
-                }           
-            }else if(request.Method == "POST"){//POST
-
-            }else if(request.Method == "DELETE"){//DELETE
-
+                    response = new HTTPResponse(400);
+                }
+            }else if(path[0].ToLower() == "following"){
+            }else if(path[0].ToLower() == "tweet"){
             }else{
-                throw new NotImplementedException();
-            } 
-            */
-            sb.Append("<html><head><title>TwitterAPI</title></head><body>");
-            sb.Append("<h1>Twitter API</h1>");
-            sb.Append((request.Url).ToString());
-            sb.Append("</body></html>");
-            response = new HTTPResponse(200);
-            response.body = Encoding.UTF8.GetBytes(sb.ToString());
+                sb.Append("<html><head><title>TwitterAPI</title></head><body>");
+                sb.Append("<h1>TwitterAPI</h1>");
+                sb.Append("</body></html");
+                response = new HTTPResponse(200);
+                response.body = Encoding.UTF8.GetBytes(sb.ToString());
+            }
             return response;
         }
-        }
+    }
 }
+            
