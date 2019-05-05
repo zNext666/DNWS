@@ -55,7 +55,7 @@ namespace DNWS
                         try{
                             response = new HTTPResponse(200);
                             response.type = "json";
-                            response.body = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(GetListUser()).ToString()); //get list user
+                            response.body = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(GetListUser())); //get list user
                         }catch(Exception){
                             response = new HTTPResponse(400);
                         }
@@ -95,7 +95,7 @@ namespace DNWS
                         try{
                             response = new HTTPResponse(200);
                             response.type = "json";
-                            response.body = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(GetListFollowing(request.getRequestByKey("user").ToString()))); //get following user                            
+                            response.body = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(GetListFollowing(request.getRequestByKey("user")))); //get following user                            
                         }catch(Exception){
                             response = new HTTPResponse(400);
                         }
@@ -110,8 +110,9 @@ namespace DNWS
                             response = new HTTPResponse(200);
                             response.body = Encoding.UTF8.GetBytes(sb.ToString());
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
+                            Console.WriteLine(ex.ToString());
                             response = new HTTPResponse(400);
                         }
                     }else if(request.Method.ToLower() == "delete"){
@@ -137,11 +138,70 @@ namespace DNWS
                     response = new HTTPResponse(400);
                 }
             }else if(path[0].ToLower() == "tweet"){
-                sb.Append("<html><head><title>TwitterAPI</title></head><body>");
-                sb.Append("<h1>TwitterAPI</h1>");
-                sb.Append("</body></html");
-                response = new HTTPResponse(200);
-                response.body = Encoding.UTF8.GetBytes(sb.ToString());
+                if(request.Status == 200)
+                {
+                    if(request.Method.ToLower() == "get")
+                    {
+                        if (request.getRequestByKey("getlist").ToLower() == "user")
+                        {
+                            try
+                            {
+                                Twitter t = new Twitter(request.getRequestByKey("user"));
+                                response = new HTTPResponse(200);
+                                response.type = "json";
+                                response.body = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(t.GetUserTimeline()));
+                            }
+                            catch (Exception)
+                            {
+                                response = new HTTPResponse(400);
+                            }
+                        }
+                        else if (request.getRequestByKey("getlist").ToLower() == "following")
+                        {
+                            try
+                            {
+                                Twitter t = new Twitter(request.getRequestByKey("user"));
+                                response = new HTTPResponse(200);
+                                response.type = "json";
+                                response.body = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(t.GetFollowingTimeline()));
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.Write(ex.ToString());
+                                response = new HTTPResponse(400);
+                            }
+                        }
+                        else
+                        {
+                            response = new HTTPResponse(400);
+                        }
+                    }
+                    else if(request.Method.ToLower() == "post")
+                    {
+                        try
+                        {
+                            Twitter t = new Twitter(request.getRequestByKey("user"));
+                            t.PostTweet(request.getRequestByKey("tweet"));
+                            sb.Append("<html><head><title>TwitterAPI</title></head><body>");
+                            sb.Append("User : " + request.getRequestByKey("user").ToLower() + " Tweet : " + request.getRequestByKey("tweet"));
+                            sb.Append("</body></html");
+                            response = new HTTPResponse(200);
+                            response.body = Encoding.UTF8.GetBytes(sb.ToString());
+                        }
+                        catch (Exception)
+                        {
+                            response = new HTTPResponse(400);
+                        }
+                    }
+                    else
+                    {
+                        response = new HTTPResponse(400);
+                    }
+                }
+                else
+                {
+                    response = new HTTPResponse(400);
+                }
             }
             else{
                 sb.Append("<html><head><title>TwitterAPI</title></head><body>");
