@@ -9,7 +9,7 @@ using Newtonsoft.Json;//dotnet add package Newtonsoft.Json --version 12.0.2
 //ref https://docs.microsoft.com/en-us/aspnet/core/tutorials/first-web-api?view=aspnetcore-2.0&tabs=visual-studio
 namespace DNWS
 {
-    public class TwitterAPI : IPlugin
+    public class TwitterAPI : TwitterPlugin
     {
         //get user list
         private List<User> GetListUser(){
@@ -18,7 +18,20 @@ namespace DNWS
                 try{
                     List<User> users = context.Users.Where(b => true).Include(b => b.Following).ToList();// using true for all user in db
                     return users;
-                }catch(Exception){
+                }catch(Exception ex){
+                    Console.WriteLine(ex.ToString());
+                    return null;
+                }
+            }
+        }
+        //get following list
+        private List<User> GetListFollowing(string user){
+            using (var context = new TweetContext()){
+                try{
+                    List<User> users = context.Users.Where(u => u.Name.Equals(user)).Include(u => u.Following).ToList();
+                    return users;
+                }catch(Exception ex){
+                    Console.WriteLine(ex.ToString());
                     return null;
                 }
             }
@@ -31,7 +44,7 @@ namespace DNWS
         {
             throw new NotImplementedException();
         }
-        public HTTPResponse GetResponse(HTTPRequest request)
+        public override HTTPResponse GetResponse(HTTPRequest request)
         {
             HTTPResponse response = null;
             StringBuilder sb = new StringBuilder();
@@ -43,18 +56,18 @@ namespace DNWS
                             response = new HTTPResponse(200);
                             response.type = "json";
                             response.body = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(GetListUser()).ToString()); //get list user
-                        }catch{
+                        }catch(Exception){
                             response = new HTTPResponse(400);
                         }
                     }else if(request.Method.ToLower() == "post"){//POST
                         try{
                             Twitter.AddUser(request.getRequestByKey("user").ToLower(),request.getRequestByKey("password").ToLower());//add user
                             sb.Append("<html><head><title>TwitterAPI</title></head><body>");
-                            sb.Append("Added User : " + request.getRequestByKey("user").ToLower() + "Complete!");
+                            sb.Append("Added User : " + request.getRequestByKey("user").ToLower() + " Complete!");
                             sb.Append("</body></html");
                             response = new HTTPResponse(200);
                             response.body = Encoding.UTF8.GetBytes(sb.ToString());
-                        }catch{
+                        }catch(Exception){
                             response = new HTTPResponse(400);
                         }
 
@@ -63,11 +76,11 @@ namespace DNWS
                             Twitter t = new Twitter(request.getRequestByKey("user"));
                             t.DeleteUser(request.getRequestByKey("user"));
                             sb.Append("<html><head><title>TwitterAPI</title></head><body>");
-                            sb.Append("Delete User : " + request.getRequestByKey("user").ToLower() + "Complete!");
+                            sb.Append("Delete User : " + request.getRequestByKey("user").ToLower() + " Complete!");
                             sb.Append("</body></html");
                             response = new HTTPResponse(200);
                             response.body = Encoding.UTF8.GetBytes(sb.ToString());
-                        }catch{
+                        }catch(Exception){
                             response = new HTTPResponse(400);
                         }
                     }else{//OTHER ELSE
@@ -77,8 +90,60 @@ namespace DNWS
                     response = new HTTPResponse(400);
                 }
             }else if(path[0].ToLower() == "following"){
+                if(request.Status == 200){
+                    if(request.Method.ToLower() == "get"){
+                        try{
+                            response = new HTTPResponse(200);
+                            response.type = "json";
+                            response.body = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(GetListFollowing(request.getRequestByKey("user").ToString()))); //get following user                            
+                        }catch(Exception){
+                            response = new HTTPResponse(400);
+                        }
+                    }else if(request.Method.ToLower() == "post"){
+                        try
+                        {
+                            Twitter t = new Twitter(request.getRequestByKey("user"));
+                            t.AddFollowing(request.getRequestByKey("follow"));
+                            sb.Append("<html><head><title>TwitterAPI</title></head><body>");
+                            sb.Append("User : " + request.getRequestByKey("user").ToLower() + " Start Following : " + request.getRequestByKey("follow") + " Complete!");
+                            sb.Append("</body></html");
+                            response = new HTTPResponse(200);
+                            response.body = Encoding.UTF8.GetBytes(sb.ToString());
+                        }
+                        catch (Exception)
+                        {
+                            response = new HTTPResponse(400);
+                        }
+                    }else if(request.Method.ToLower() == "delete"){
+                        try
+                        {
+                            Twitter t = new Twitter(request.getRequestByKey("user"));
+                            t.RemoveFollowing(request.getRequestByKey("follow"));
+                            sb.Append("<html><head><title>TwitterAPI</title></head><body>");
+                            sb.Append("User : " + request.getRequestByKey("user").ToLower() + " Unfollowing : " + request.getRequestByKey("follow") + " Complete!");
+                            sb.Append("</body></html");
+                            response = new HTTPResponse(200);
+                            response.body = Encoding.UTF8.GetBytes(sb.ToString());
+
+                        }
+                        catch (Exception)
+                        {
+                            response = new HTTPResponse(400);
+                        }
+                    }else{
+                        response = new HTTPResponse(400);
+                    }   
+                }else{
+                    response = new HTTPResponse(400);
+                }
             }else if(path[0].ToLower() == "tweet"){
-            }else{
+                sb.Append("<html><head><title>TwitterAPI</title></head><body>");
+                sb.Append("<h1>TwitterAPI</h1>");
+                sb.Append("</body></html");
+                response = new HTTPResponse(200);
+                response.body = Encoding.UTF8.GetBytes(sb.ToString());
+            }
+            else{
                 sb.Append("<html><head><title>TwitterAPI</title></head><body>");
                 sb.Append("<h1>TwitterAPI</h1>");
                 sb.Append("</body></html");

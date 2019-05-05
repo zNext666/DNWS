@@ -43,7 +43,7 @@
       "Postprocessing": "false"
     },
     {
-      "Path": "following ",
+      "Path": "following",
       "Class": "DNWS.TwitterAPI",
       "Preprocessing": "false",
       "Postprocessing": "false"
