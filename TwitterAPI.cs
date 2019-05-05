@@ -50,7 +50,8 @@ namespace DNWS
                         response = new HTTPResponse(200);
                         response.body = Encoding.UTF8.GetBytes(sb.ToString());
                     }else if(request.Method.ToLower() == "delete"){//DELETE
-                        Twitter.DeleteUser(request.getRequestByKey("user"));
+                        Twitter t = new Twitter(request.getRequestByKey("user"));
+                        t.DeleteUser(request.getRequestByKey("user"));
                         sb.Append("<html><head><title>TwitterAPI</title></head><body>");
                         sb.Append("Delete User : " + request.getRequestByKey("user").ToLower() + "Complete!");
                         sb.Append("</body></html");
