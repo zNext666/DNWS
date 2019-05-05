@@ -198,8 +198,7 @@ namespace DNWS
                     foreach(User follow in followingList){
                         Twitter t = new Twitter(follow.Name);
                         t.RemoveFollowing(userlist[0].Name);
-                    }
-                    
+                    }                    
                     context.Users.Remove(userlist[0]);
                     context.SaveChanges();
                 }catch(Exception ex){

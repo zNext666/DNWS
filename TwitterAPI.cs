@@ -39,24 +39,37 @@ namespace DNWS
             if(path[0].ToLower() == "user"){
                 if(request.Status == 200){
                     if(request.Method.ToLower() == "get"){//GET
-                        response = new HTTPResponse(200);
-                        response.type = "json";
-                        response.body = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(GetListUser()).ToString()); //get list user
+                        try{
+                            response = new HTTPResponse(200);
+                            response.type = "json";
+                            response.body = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(GetListUser()).ToString()); //get list user
+                        }catch{
+                            response = new HTTPResponse(400);
+                        }
                     }else if(request.Method.ToLower() == "post"){//POST
-                        Twitter.AddUser(request.getRequestByKey("user").ToLower(),request.getRequestByKey("password").ToLower());//add user
-                        sb.Append("<html><head><title>TwitterAPI</title></head><body>");
-                        sb.Append("Added User : " + request.getRequestByKey("user").ToLower() + "Complete!");
-                        sb.Append("</body></html");
-                        response = new HTTPResponse(200);
-                        response.body = Encoding.UTF8.GetBytes(sb.ToString());
+                        try{
+                            Twitter.AddUser(request.getRequestByKey("user").ToLower(),request.getRequestByKey("password").ToLower());//add user
+                            sb.Append("<html><head><title>TwitterAPI</title></head><body>");
+                            sb.Append("Added User : " + request.getRequestByKey("user").ToLower() + "Complete!");
+                            sb.Append("</body></html");
+                            response = new HTTPResponse(200);
+                            response.body = Encoding.UTF8.GetBytes(sb.ToString());
+                        }catch{
+                            response = new HTTPResponse(400);
+                        }
+
                     }else if(request.Method.ToLower() == "delete"){//DELETE
-                        Twitter t = new Twitter(request.getRequestByKey("user"));
-                        t.DeleteUser(request.getRequestByKey("user"));
-                        sb.Append("<html><head><title>TwitterAPI</title></head><body>");
-                        sb.Append("Delete User : " + request.getRequestByKey("user").ToLower() + "Complete!");
-                        sb.Append("</body></html");
-                        response = new HTTPResponse(200);
-                        response.body = Encoding.UTF8.GetBytes(sb.ToString());
+                        try{
+                            Twitter t = new Twitter(request.getRequestByKey("user"));
+                            t.DeleteUser(request.getRequestByKey("user"));
+                            sb.Append("<html><head><title>TwitterAPI</title></head><body>");
+                            sb.Append("Delete User : " + request.getRequestByKey("user").ToLower() + "Complete!");
+                            sb.Append("</body></html");
+                            response = new HTTPResponse(200);
+                            response.body = Encoding.UTF8.GetBytes(sb.ToString());
+                        }catch{
+                            response = new HTTPResponse(400);
+                        }
                     }else{//OTHER ELSE
                         response = new HTTPResponse(400);
                     }
