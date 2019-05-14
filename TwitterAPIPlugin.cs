@@ -278,6 +278,7 @@ namespace DNWS
                             string resp = JsonConvert.SerializeObject(user.Following);
                             if (resp == null)
                             {
+                    
                                 response.SetBody("No folowing");
                                 response.Status = 404;
                                 return response;
@@ -313,6 +314,7 @@ namespace DNWS
                         }
                         catch (Exception ex)
                         {
+                            //Console.WriteLine(ex.ToString());
                             response.Status = 400;
                             response.SetBody(ex.Message);
                             return response;
