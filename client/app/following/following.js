@@ -21,6 +21,7 @@ angular.module('followingList', ['ngRoute'])
         //console.log(data);
         $http.post('http://localhost:8080/twitterapi/following/', data, requestOptions).then(function (response) {
           //self.followings += response.response;
+          console.log(response);
         });
       }
 
@@ -29,7 +30,7 @@ angular.module('followingList', ['ngRoute'])
         const data = "followingname=" + encodeURIComponent(followingname);
         //console.log(data);
         $http.delete('http://localhost:8080/twitterapi/following/?'+data,requestOptions).then(function (response){
-
+          console.log(response);
         });
       }
 

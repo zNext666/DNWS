@@ -63,6 +63,7 @@ namespace DNWS
         }
         public void RemoveFollowing(string followingName)
         {
+            Console.WriteLine(user.Name);
             if (user == null)
             {
                 throw new Exception("User is not set");
@@ -75,8 +76,8 @@ namespace DNWS
             {
                 Following following = new Following();
                 following.Name = followingName;
-                user.Following.Remove(following);
-                context.Users.Update(user);
+                user.Following.Remove(following); //NOT WORKING AT THIS LINE
+                context.Users.Update(user);        
                 context.SaveChanges();
             }
         }
